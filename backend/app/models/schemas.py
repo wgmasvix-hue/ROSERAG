@@ -176,6 +176,27 @@ class AnalyticsResponse(BaseModel):
     knowledge_graph: Dict[str, int]
 
 
+# ---- Local file / directory ingestion ----
+
+class IngestPathRequest(BaseModel):
+    path: str
+    recursive: bool = True
+
+
+class IngestPathResult(BaseModel):
+    document_id: str
+    filename: str
+    path: str
+    pages: int
+    chunks: int
+
+
+class IngestPathResponse(BaseModel):
+    ingested: List[IngestPathResult]
+    errors: List[Dict[str, str]]
+    total: int
+
+
 # ---- Phase 8: Copilot ----
 
 class AgentTypeEnum(str, Enum):

@@ -248,6 +248,50 @@ def cmd_start(args) -> None:
     )
 
 
+def cmd_ingest(args) -> None:
+    """Ingest a local file or directory into the running ROSERAG instance."""
+    path = str(Path(args.path).expanduser().resolve())
+    url = f"http://localhost:{args.port}/api/documents/ingest-path"
+    payload = json.dumps({"path": path, "recursive": not args.no_recurse}).encode()
+    req = urllib.request.Request(
+        url, data=payload,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    print(f"\n  Ingesting: {path}")
+    if not args.no_recurse and Path(args.path).is_dir():
+        print("  (recursive — use --no-recurse to limit to top level)\n")
+    else:
+        print()
+
+    try:
+        with urllib.request.urlopen(req, timeout=600) as r:
+            result = json.loads(r.read())
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode(errors="replace")
+        try:
+            detail = json.loads(body).get("detail", body)
+        except Exception:
+            detail = body
+        print(f"\n  ✗  Server error {exc.code}: {detail}\n")
+        sys.exit(1)
+    except urllib.error.URLError as exc:
+        print(f"\n  ✗  Cannot reach server: {exc}")
+        print("     Run 'roserag start' first.\n")
+        sys.exit(1)
+
+    for doc in result.get("ingested", []):
+        print(f"  ✓  {doc['filename']}  ({doc['pages']} pages · {doc['chunks']} chunks)")
+        print(f"     {doc['path']}")
+
+    for err in result.get("errors", []):
+        print(f"  ✗  {err['file']}: {err['error']}")
+
+    total = result.get("total", 0)
+    n_err = len(result.get("errors", []))
+    print(f"\n  {total} document(s) ingested" + (f", {n_err} error(s)" if n_err else "") + ".\n")
+
+
 def cmd_status(args) -> None:
     url = f"http://localhost:{args.port}/api/health"
     try:
@@ -286,6 +330,12 @@ def main() -> None:
     p_start.add_argument("--port",      type=int, default=8000)
     p_start.add_argument("--no-reload", action="store_true")
 
+    p_ingest = sub.add_parser("ingest", help="Ingest a local file or directory")
+    p_ingest.add_argument("path", help="File or directory to ingest")
+    p_ingest.add_argument("--port",       type=int, default=8000)
+    p_ingest.add_argument("--no-recurse", action="store_true",
+                          help="Do not recurse into subdirectories")
+
     p_status = sub.add_parser("status", help="Check if server is running")
     p_status.add_argument("--port", type=int, default=8000)
 
@@ -296,6 +346,7 @@ def main() -> None:
         "build":   cmd_build,
         "dev":     cmd_dev,
         "start":   cmd_start,
+        "ingest":  cmd_ingest,
         "status":  cmd_status,
     }[args.command](args)
 
