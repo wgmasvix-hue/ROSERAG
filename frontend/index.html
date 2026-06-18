@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ROSERAG — Institutional Knowledge Assistant</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="layout">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="brand">
+          <span class="brand-rose">ROSE</span><span class="brand-rag">RAG</span>
+        </div>
+        <p class="brand-tagline">Retrieve · Reason · Respond</p>
+      </div>
+
+      <div class="sidebar-section">
+        <h3 class="section-label">Knowledge Base</h3>
+
+        <label class="upload-btn" id="upload-label">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+          Upload PDF
+          <input type="file" id="file-input" accept=".pdf" hidden multiple />
+        </label>
+
+        <div id="upload-status" class="upload-status hidden"></div>
+
+        <div id="doc-list" class="doc-list">
+          <div class="doc-empty">No documents ingested yet.</div>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="system-status">
+          <span class="status-dot" id="status-dot"></span>
+          <span id="status-label">Checking…</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+      <div class="chat-header">
+        <div>
+          <h1 class="chat-title">Academic Research Assistant</h1>
+          <p class="chat-subtitle">Evidence-grounded answers from your institutional knowledge base</p>
+        </div>
+      </div>
+
+      <div class="chat-messages" id="chat-messages">
+        <div class="welcome-message">
+          <div class="welcome-icon">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          </div>
+          <h2>Welcome to ROSERAG</h2>
+          <p>Upload institutional documents on the left, then ask evidence-based questions. Every answer includes source citations and a confidence score.</p>
+          <div class="welcome-hints">
+            <div class="hint">"What research has been conducted on food security?"</div>
+            <div class="hint">"Summarize the key findings from the policy documents."</div>
+            <div class="hint">"What evidence supports this recommendation?"</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-input-area">
+        <div class="chat-input-wrap">
+          <textarea
+            id="chat-input"
+            placeholder="Ask a question grounded in your institutional knowledge…"
+            rows="1"
+          ></textarea>
+          <button id="send-btn" class="send-btn" title="Send">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+        <p class="input-disclaimer">Answers are sourced exclusively from your uploaded documents.</p>
+      </div>
+    </main>
+
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
