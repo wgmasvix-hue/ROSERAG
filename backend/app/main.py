@@ -68,11 +68,18 @@ async def get_config():
     }
 
 
-# Serve frontend
-frontend_path = os.path.join(os.path.dirname(__file__), "..", "..", "frontend")
-if os.path.isdir(frontend_path):
-    app.mount("/static", StaticFiles(directory=frontend_path), name="static")
+# Serve UI — Angular build (ui/dist/roserag-ui/browser/) takes priority;
+# falls back to the legacy vanilla-JS frontend/ for dev without a built UI.
+_root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_angular_dist = os.path.join(_root_dir, "ui", "dist", "roserag-ui", "browser")
+_legacy_dir   = os.path.join(_root_dir, "frontend")
+
+if os.path.isdir(_angular_dist):
+    # Angular SPA: static assets + index.html fallback for all non-API paths
+    app.mount("/", StaticFiles(directory=_angular_dist, html=True), name="ui")
+elif os.path.isdir(_legacy_dir):
+    app.mount("/static", StaticFiles(directory=_legacy_dir), name="static")
 
     @app.get("/", response_class=FileResponse)
     async def root():
-        return FileResponse(os.path.join(frontend_path, "index.html"))
+        return FileResponse(os.path.join(_legacy_dir, "index.html"))

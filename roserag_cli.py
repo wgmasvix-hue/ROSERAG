@@ -158,6 +158,78 @@ def cmd_init(_args) -> None:
     print(f"  ✓  Open browser:  http://localhost:8000\n")
 
 
+def cmd_install(args) -> None:
+    """Full DSpace-style installation: Python deps + npm install + Angular build."""
+    print("\n┌─────────────────────────────────────────┐")
+    print("│   ROSERAG — Installation                │")
+    print("└─────────────────────────────────────────┘")
+
+    ui_dir = ROOT / "ui"
+
+    _section("Python dependencies")
+    subprocess.run([sys.executable, "-m", "pip", "install", "-e", "."], cwd=ROOT, check=True)
+    print("  ✓  Python packages installed")
+
+    _section("Angular UI dependencies")
+    if not ui_dir.is_dir():
+        print(f"  ✗  Angular project not found at {ui_dir}")
+        print("     Pull the latest code and try again.")
+        sys.exit(1)
+    subprocess.run(["npm", "install"], cwd=ui_dir, check=True)
+    print("  ✓  npm packages installed")
+
+    _section("Building Angular UI")
+    build_cfg = "production" if not args.dev else "development"
+    subprocess.run(["npm", "run", "build", "--", f"--configuration={build_cfg}"],
+                   cwd=ui_dir, check=True)
+    print("  ✓  Angular build complete")
+
+    print("\n  Installation complete.")
+    print("  Next: roserag init   (configure institution & LLM provider)")
+    print("        roserag start  (launch server)\n")
+
+
+def cmd_build(args) -> None:
+    """Rebuild the Angular frontend (without reinstalling packages)."""
+    ui_dir = ROOT / "ui"
+    if not ui_dir.is_dir():
+        print("  ✗  Angular project not found at ui/")
+        sys.exit(1)
+    build_cfg = "production" if not args.dev else "development"
+    print(f"\n  Building Angular UI ({build_cfg}) …\n")
+    subprocess.run(["npm", "run", "build", "--", f"--configuration={build_cfg}"],
+                   cwd=ui_dir, check=True)
+    print("\n  ✓  Build complete — run 'roserag start' to serve.\n")
+
+
+def cmd_dev(args) -> None:
+    """Start FastAPI + Angular dev server for local development."""
+    import threading
+
+    ui_dir = ROOT / "ui"
+    api_env = {**os.environ, "PYTHONPATH": str(ROOT)}
+
+    def _api():
+        subprocess.run(
+            [sys.executable, "-m", "uvicorn", "backend.app.main:app",
+             "--host", "127.0.0.1", "--port", str(args.api_port), "--reload"],
+            cwd=ROOT, env=api_env,
+        )
+
+    def _ng():
+        subprocess.run(
+            ["npm", "run", "start", "--", "--port", str(args.ui_port),
+             "--proxy-config", "proxy.conf.json"],
+            cwd=ui_dir,
+        )
+
+    print(f"\n  API  →  http://127.0.0.1:{args.api_port}")
+    print(f"  UI   →  http://localhost:{args.ui_port}\n")
+    t = threading.Thread(target=_api, daemon=True)
+    t.start()
+    _ng()   # blocks; Ctrl-C kills both
+
+
 def cmd_start(args) -> None:
     host = args.host
     port = args.port
@@ -199,19 +271,32 @@ def main() -> None:
 
     sub.add_parser("init", help="Interactive setup wizard (writes .env)")
 
-    p_start = sub.add_parser("start", help="Start the server")
-    p_start.add_argument("--host",      default="0.0.0.0",  help="Bind host  (default 0.0.0.0)")
-    p_start.add_argument("--port",      type=int, default=8000, help="Bind port  (default 8000)")
-    p_start.add_argument("--no-reload", action="store_true", help="Disable auto-reload")
+    p_install = sub.add_parser("install", help="Full install: pip + npm + Angular build")
+    p_install.add_argument("--dev", action="store_true", help="Development build (unminified)")
+
+    p_build = sub.add_parser("build", help="Rebuild the Angular frontend")
+    p_build.add_argument("--dev", action="store_true", help="Development build (unminified)")
+
+    p_dev = sub.add_parser("dev", help="Start FastAPI + Angular dev server")
+    p_dev.add_argument("--api-port", type=int, default=8000)
+    p_dev.add_argument("--ui-port",  type=int, default=4200)
+
+    p_start = sub.add_parser("start", help="Start the production server")
+    p_start.add_argument("--host",      default="0.0.0.0")
+    p_start.add_argument("--port",      type=int, default=8000)
+    p_start.add_argument("--no-reload", action="store_true")
 
     p_status = sub.add_parser("status", help="Check if server is running")
     p_status.add_argument("--port", type=int, default=8000)
 
     args = parser.parse_args()
     {
-        "init":   cmd_init,
-        "start":  cmd_start,
-        "status": cmd_status,
+        "init":    cmd_init,
+        "install": cmd_install,
+        "build":   cmd_build,
+        "dev":     cmd_dev,
+        "start":   cmd_start,
+        "status":  cmd_status,
     }[args.command](args)
 
 
