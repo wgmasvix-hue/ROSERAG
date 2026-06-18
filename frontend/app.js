@@ -9,6 +9,18 @@ let currentAgent = "research";
 // ── DOM refs ──────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
 
+// ── Viewport height fix (iOS keyboard shrinks window) ─────────
+function setVh() {
+  const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  document.documentElement.style.setProperty('--real-vh', `${h * 0.01}px`);
+}
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', setVh);
+} else {
+  window.addEventListener('resize', setVh);
+}
+setVh();
+
 const statusDot    = $("status-dot");
 const statusLabel  = $("status-label");
 const chatMessages = $("chat-messages");
@@ -20,16 +32,22 @@ const rpPlaceholder = $("rp-placeholder");
 const rpContent    = $("rp-content");
 
 // ══ Navigation ════════════════════════════════════════════════
+function switchView(view) {
+  document.querySelectorAll(".nav-item").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll(".bn-tab").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll(`.nav-item[data-view="${view}"]`).forEach(b => b.classList.add("active"));
+  document.querySelectorAll(`.bn-tab[data-view="${view}"]`).forEach(b => b.classList.add("active"));
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  $(`view-${view}`).classList.add("active");
+  onViewActivated(view);
+}
+
 document.querySelectorAll(".nav-item").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const view = btn.dataset.view;
-    document.querySelectorAll(".nav-item").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
-    $(`view-${view}`).classList.add("active");
-    onViewActivated(view);
-    closeSidebar(); // auto-close drawer on mobile
-  });
+  btn.addEventListener("click", () => switchView(btn.dataset.view));
+});
+
+document.querySelectorAll(".bn-tab").forEach(btn => {
+  btn.addEventListener("click", () => switchView(btn.dataset.view));
 });
 
 function onViewActivated(view) {
@@ -51,6 +69,8 @@ async function checkHealth() {
     const cls = ok ? "status-dot online" : "status-dot offline";
     document.querySelectorAll(".status-dot").forEach(d => d.className = cls);
     if (statusLabel) statusLabel.textContent = ok ? "System online" : "Offline";
+    const mLabel = $("status-label-m");
+    if (mLabel) mLabel.textContent = ok ? "Online" : "Offline";
   });
 }
 
@@ -507,34 +527,7 @@ function fmtDate(iso) {
   } catch { return iso; }
 }
 
-// ══ Mobile Sidebar ════════════════════════════════════════════
-function openSidebar() {
-  $("nav-sidebar").classList.add("nav-open");
-  const overlay = $("nav-overlay");
-  overlay.classList.add("visible");
-  overlay.onclick = closeSidebar;
-}
-
-function closeSidebar() {
-  $("nav-sidebar").classList.remove("nav-open");
-  // Only clear overlay if right panel isn't open
-  if (!$("right-panel").classList.contains("rp-open")) {
-    $("nav-overlay").classList.remove("visible");
-    $("nav-overlay").onclick = null;
-  }
-}
-
-const hamburger = $("hamburger");
-if (hamburger) {
-  hamburger.addEventListener("click", () => {
-    if ($("nav-sidebar").classList.contains("nav-open")) {
-      closeSidebar();
-    } else {
-      openSidebar();
-    }
-  });
-}
-
+// ══ Right Panel close button ═══════════════════════════════════
 const rpClose = $("rp-close");
 if (rpClose) rpClose.addEventListener("click", closeRightPanel);
 

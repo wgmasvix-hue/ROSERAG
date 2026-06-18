@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>ROSERAG — Institutional Intelligence Platform</title>
   <link rel="stylesheet" href="/static/style.css" />
 </head>
@@ -11,16 +11,15 @@
 <div class="shell">
 
   <!-- ═══════════ MOBILE TOPBAR ═══════════ -->
-  <header class="mobile-topbar" id="mobile-topbar">
-    <button class="hamburger" id="hamburger" aria-label="Open menu">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <line x1="3" y1="7" x2="21" y2="7"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="17" x2="21" y2="17"/>
-      </svg>
-    </button>
+  <header class="mobile-topbar">
     <div class="mobile-brand">
       <span class="brand-rose">ROSE</span><span class="brand-rag">RAG</span>
+      <span class="brand-version">v2.0</span>
     </div>
-    <span class="status-dot" id="status-dot-m"></span>
+    <div class="mobile-status-wrap">
+      <span class="status-dot" id="status-dot-m"></span>
+      <span class="mobile-status-label" id="status-label-m">…</span>
+    </div>
   </header>
 
   <!-- ═══════════ LEFT SIDEBAR ═══════════ -->
@@ -119,7 +118,7 @@
         <div id="doc-table-wrap">
           <table class="data-table" id="doc-table">
             <thead>
-              <tr><th>Document</th><th>Pages</th><th>Chunks</th><th>Ingested</th><th></th></tr>
+              <tr><th>Document</th><th class="col-pages">Pages</th><th class="col-chunks">Chunks</th><th class="col-date">Ingested</th><th></th></tr>
             </thead>
             <tbody id="doc-tbody">
               <tr><td colspan="5" class="empty-row">No documents in knowledge base.</td></tr>
@@ -223,7 +222,7 @@
 
   </main>
 
-  <!-- ═══════════ RIGHT PANEL ═══════════ -->
+  <!-- ═══════════ RIGHT PANEL (Evidence) ═══════════ -->
   <aside class="right-panel" id="right-panel">
     <button class="rp-close" id="rp-close" aria-label="Close">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -234,8 +233,6 @@
     </div>
 
     <div class="rp-content hidden" id="rp-content">
-
-      <!-- Trust Score -->
       <div class="rp-section">
         <h3 class="rp-label">Trust Assessment</h3>
         <div class="trust-display" id="trust-display">
@@ -247,17 +244,42 @@
           <div class="trust-components" id="trust-components"></div>
         </div>
       </div>
-
-      <!-- Sources -->
       <div class="rp-section">
         <h3 class="rp-label">Evidence Sources</h3>
         <div id="rp-sources" class="rp-sources"></div>
       </div>
-
     </div>
   </aside>
 
-  <!-- Mobile backdrop (nav + evidence panel) -->
+  <!-- ═══════════ BOTTOM NAV (mobile only) ═══════════ -->
+  <nav class="bottom-nav" id="bottom-nav">
+    <button class="bn-tab active" data-view="ask">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span>Ask</span>
+    </button>
+    <button class="bn-tab" data-view="documents">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <span>Docs</span>
+    </button>
+    <button class="bn-tab" data-view="graph">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      <span>Graph</span>
+    </button>
+    <button class="bn-tab" data-view="analytics">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span>Stats</span>
+    </button>
+    <button class="bn-tab" data-view="history">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>History</span>
+    </button>
+    <button class="bn-tab" data-view="copilot">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      <span>Agents</span>
+    </button>
+  </nav>
+
+  <!-- Backdrop for evidence sheet and tablet right-panel -->
   <div class="nav-overlay" id="nav-overlay"></div>
 
 </div>
