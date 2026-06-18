@@ -856,3 +856,188 @@ html, body { height: 100%; font-family: var(--font); background: var(--ink-50); 
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--ink-200); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--ink-300); }
+
+/* ═══ Mobile Topbar (hidden on desktop) ════════════════════════ */
+.mobile-topbar {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  height: 52px;
+  background: var(--ink-900);
+  border-bottom: 1px solid var(--ink-800);
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.mobile-brand {
+  flex: 1;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+
+.hamburger {
+  background: none;
+  border: none;
+  color: var(--ink-200);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .12s;
+  flex-shrink: 0;
+}
+.hamburger:hover { background: var(--ink-800); }
+
+/* ═══ Nav Overlay ═══════════════════════════════════════════════ */
+.nav-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 190;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+}
+.nav-overlay.visible { display: block; }
+
+/* ═══ Right Panel Close Button ══════════════════════════════════ */
+.rp-close {
+  display: none;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: var(--ink-100);
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--ink-500);
+  transition: background .12s;
+  z-index: 1;
+  flex-shrink: 0;
+}
+.rp-close:hover { background: var(--ink-200); color: var(--ink-900); }
+
+/* ═══ Responsive — Tablet (640–1023px) ════════════════════════ */
+@media (max-width: 1023px) {
+  .shell {
+    grid-template-columns: var(--nav-w) 1fr;
+  }
+
+  .right-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(var(--right-w), 85vw);
+    transform: translateX(110%);
+    transition: transform .25s ease;
+    z-index: 200;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, .14);
+  }
+
+  .right-panel.rp-open {
+    transform: translateX(0);
+  }
+
+  .rp-close { display: flex; }
+}
+
+/* ═══ Responsive — Mobile (<640px) ════════════════════════════ */
+@media (max-width: 639px) {
+  html, body { height: 100%; }
+
+  .shell {
+    display: flex;
+    flex-direction: column;
+    height: 100svh; /* safe area on modern browsers */
+    height: 100vh;  /* fallback */
+    overflow: hidden;
+  }
+
+  .mobile-topbar { display: flex; }
+
+  /* Sidebar becomes a slide-in drawer */
+  .nav-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 260px;
+    transform: translateX(-110%);
+    transition: transform .25s ease;
+    z-index: 210;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, .18);
+  }
+
+  .nav-sidebar.nav-open { transform: translateX(0); }
+
+  /* Center panel fills remaining space */
+  .center-panel {
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* Right panel as bottom sheet */
+  .right-panel {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 72vh;
+    transform: translateY(110%);
+    border-radius: var(--radius-l) var(--radius-l) 0 0;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, .14);
+  }
+
+  .right-panel.rp-open { transform: translateY(0); }
+
+  /* Sheet drag handle */
+  .right-panel::before {
+    content: "";
+    display: block;
+    width: 36px;
+    height: 4px;
+    background: var(--ink-200);
+    border-radius: 2px;
+    margin: 10px auto 0;
+  }
+
+  .rp-content, .rp-placeholder { padding-top: 10px; }
+
+  /* Tighten view padding */
+  .view-header      { padding: 14px 16px 12px; }
+  .view-body        { padding: 14px 16px; }
+  .chat-messages    { padding: 14px 16px; }
+  .chat-composer    { padding: 10px 12px 14px; }
+
+  /* Chat bubbles narrower */
+  .msg-bubble { max-width: 92%; }
+
+  /* Documents table: hide Pages & Chunks columns */
+  .data-table th:nth-child(2),
+  .data-table td:nth-child(2),
+  .data-table th:nth-child(3),
+  .data-table td:nth-child(3) { display: none; }
+
+  /* Agent selector wraps tighter */
+  .agent-selector { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); }
+
+  /* Analytics grid tighter */
+  .analytics-grid { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+
+  /* Hint chips smaller */
+  .hint-chip { font-size: 11px; padding: 5px 11px; }
+
+  /* History meta truncate */
+  .history-meta { flex-direction: column; align-items: flex-end; gap: 3px; }
+}

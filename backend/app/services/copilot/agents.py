@@ -6,11 +6,10 @@ the answer for domain-specific framing. Full tool use and multi-agent
 orchestration are future work; this module establishes the architecture.
 """
 
-import httpx
 from typing import Dict, Any, List
 
 from .base import BaseAgent, AgentType
-from ...config import settings
+from ...core.llm_client import chat_complete
 
 
 def _build_context(chunks: List[Dict[str, Any]]) -> str:
@@ -20,21 +19,13 @@ def _build_context(chunks: List[Dict[str, Any]]) -> str:
     return "\n\n---\n\n".join(parts)
 
 
-async def _call_ollama(system: str, user: str) -> str:
-    async with httpx.AsyncClient(timeout=120.0) as client:
-        response = await client.post(
-            f"{settings.ollama_base_url}/api/chat",
-            json={
-                "model": settings.chat_model,
-                "messages": [
-                    {"role": "system", "content": system},
-                    {"role": "user",   "content": user},
-                ],
-                "stream": False,
-            },
-        )
-        response.raise_for_status()
-        return response.json()["message"]["content"]
+async def _call_llm(system: str, user: str) -> str:
+    return await chat_complete(
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user",   "content": user},
+        ]
+    )
 
 
 class ResearchAgent(BaseAgent):
@@ -48,7 +39,7 @@ Ground every claim in the provided sources. Note when evidence is insufficient."
     async def run(self, query: str, chunks: List[Dict[str, Any]]) -> Dict[str, Any]:
         context = _build_context(chunks)
         user_msg = f"Context:\n{context}\n\nResearch question: {query}\n\nProvide a scholarly synthesis."
-        answer = await _call_ollama(self.system_prompt, user_msg)
+        answer = await _call_llm(self.system_prompt, user_msg)
         return {
             "answer":          answer,
             "agent":           self.agent_type,
@@ -67,7 +58,7 @@ discoverability. Always cite document titles, page numbers, and sections."""
     async def run(self, query: str, chunks: List[Dict[str, Any]]) -> Dict[str, Any]:
         context = _build_context(chunks)
         user_msg = f"Context:\n{context}\n\nUser query: {query}\n\nGuide the user to the most relevant information."
-        answer = await _call_ollama(self.system_prompt, user_msg)
+        answer = await _call_llm(self.system_prompt, user_msg)
         return {
             "answer":          answer,
             "agent":           self.agent_type,
@@ -86,7 +77,7 @@ Write in clear, accessible language suitable for institutional stakeholders."""
     async def run(self, query: str, chunks: List[Dict[str, Any]]) -> Dict[str, Any]:
         context = _build_context(chunks)
         user_msg = f"Context:\n{context}\n\nPolicy question: {query}\n\nProvide a policy analysis."
-        answer = await _call_ollama(self.system_prompt, user_msg)
+        answer = await _call_llm(self.system_prompt, user_msg)
         return {
             "answer":          answer,
             "agent":           self.agent_type,
@@ -105,7 +96,7 @@ Be precise, conservative, and reference specific document sections."""
     async def run(self, query: str, chunks: List[Dict[str, Any]]) -> Dict[str, Any]:
         context = _build_context(chunks)
         user_msg = f"Context:\n{context}\n\nCompliance question: {query}\n\nProvide a compliance assessment."
-        answer = await _call_ollama(self.system_prompt, user_msg)
+        answer = await _call_llm(self.system_prompt, user_msg)
         return {
             "answer":          answer,
             "agent":           self.agent_type,
@@ -124,7 +115,7 @@ Avoid jargon. Lead with the most critical finding. Be brief and direct."""
     async def run(self, query: str, chunks: List[Dict[str, Any]]) -> Dict[str, Any]:
         context = _build_context(chunks)
         user_msg = f"Context:\n{context}\n\nExecutive question: {query}\n\nProvide a concise executive briefing."
-        answer = await _call_ollama(self.system_prompt, user_msg)
+        answer = await _call_llm(self.system_prompt, user_msg)
         return {
             "answer":          answer,
             "agent":           self.agent_type,
