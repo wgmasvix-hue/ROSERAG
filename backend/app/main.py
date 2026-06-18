@@ -8,6 +8,7 @@ import os
 from .api import documents, search, chat
 from .api import ask, history, analytics, graph, copilot
 from .services import memory_service
+from .config import settings
 
 
 @asynccontextmanager
@@ -48,7 +49,23 @@ app.include_router(copilot.router,   prefix="/api")
 
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "service": "ROSERAG", "version": "2.0.0"}
+    return {
+        "status": "ok",
+        "service": f"{settings.brand_prefix}{settings.brand_suffix}",
+        "version": "2.0.0",
+    }
+
+
+@app.get("/api/config")
+async def get_config():
+    return {
+        "institution_name":    settings.institution_name,
+        "institution_tagline": settings.institution_tagline,
+        "brand_prefix":        settings.brand_prefix,
+        "brand_suffix":        settings.brand_suffix,
+        "brand_color_primary": settings.brand_color_primary,
+        "brand_color_accent":  settings.brand_color_accent,
+    }
 
 
 # Serve frontend

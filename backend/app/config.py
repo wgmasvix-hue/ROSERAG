@@ -2,6 +2,14 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    # ── Institution branding ─────────────────────────────────────────
+    institution_name: str = "Institutional Intelligence Platform"
+    institution_tagline: str = "Retrieve · Reason · Respond"
+    brand_prefix: str = "ROSE"
+    brand_suffix: str = "RAG"
+    brand_color_primary: str = "#9b2248"
+    brand_color_accent: str = "#d44e72"
+
     # ── Ollama (local dev, used when llm_provider = "ollama") ───────
     ollama_base_url: str = "http://localhost:11434"
     ollama_chat_model: str = "llama3.2"

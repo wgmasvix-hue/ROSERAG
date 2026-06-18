@@ -531,6 +531,54 @@ function fmtDate(iso) {
 const rpClose = $("rp-close");
 if (rpClose) rpClose.addEventListener("click", closeRightPanel);
 
+// ══ Branding ═══════════════════════════════════════════════════
+async function applyBranding() {
+  try {
+    const res = await fetch(`${API}/api/config`);
+    if (!res.ok) return;
+    const cfg = await res.json();
+
+    // CSS custom properties for colors
+    const root = document.documentElement;
+    if (cfg.brand_color_primary) root.style.setProperty("--rose-600", cfg.brand_color_primary);
+    if (cfg.brand_color_accent)  root.style.setProperty("--rose-400", cfg.brand_color_accent);
+
+    // Brand name splits (ROSE / RAG logo halves)
+    document.querySelectorAll(".brand-rose").forEach(el => el.textContent = cfg.brand_prefix);
+    document.querySelectorAll(".brand-rag").forEach(el => el.textContent = cfg.brand_suffix);
+
+    // Tagline under logo in sidebar
+    const taglineEl = document.querySelector(".nav-tagline");
+    if (taglineEl) taglineEl.textContent = cfg.institution_tagline;
+
+    // Ask-view header
+    const askHeader = document.querySelector("#view-ask .view-header h1");
+    if (askHeader) askHeader.textContent = `Ask ${cfg.brand_prefix}${cfg.brand_suffix}`;
+
+    // Welcome block
+    const welcomeH2 = document.querySelector(".welcome-block h2");
+    if (welcomeH2) welcomeH2.textContent = cfg.institution_name;
+
+    const welcomeP = document.querySelector(".welcome-block > p");
+    if (welcomeP) {
+      welcomeP.textContent =
+        `Upload documents, then ask questions grounded in ${cfg.institution_name}'s ` +
+        `knowledge. Every answer includes source citations, trust score, and evidence trails.`;
+    }
+
+    const composerNote = document.querySelector(".composer-note");
+    if (composerNote) {
+      composerNote.textContent = `Answers sourced exclusively from ${cfg.institution_name} documents`;
+    }
+
+    // Page title
+    document.title = `${cfg.brand_prefix}${cfg.brand_suffix} — ${cfg.institution_name}`;
+  } catch {
+    // Branding fetch failed — defaults remain in place
+  }
+}
+
 // ══ Init ═══════════════════════════════════════════════════════
+applyBranding();
 checkHealth();
 setInterval(checkHealth, 30_000);
