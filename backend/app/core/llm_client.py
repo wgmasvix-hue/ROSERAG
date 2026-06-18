@@ -34,8 +34,17 @@ def _auth_headers(use_embed_key: bool = False) -> Dict[str, str]:
     return {}
 
 
+def _assert_api_key(for_what: str) -> None:
+    if settings.llm_provider == "openai" and not settings.llm_api_key:
+        raise RuntimeError(
+            f"{for_what} requires LLM_API_KEY to be set. "
+            "Add it in Vercel → Settings → Environment Variables, then redeploy."
+        )
+
+
 async def chat_complete(messages: List[Dict[str, str]], timeout: float = 120.0) -> str:
     """Send a chat request and return the assistant content string."""
+    _assert_api_key("Chat")
     url = _chat_url()
     headers = _auth_headers()
 
@@ -55,6 +64,13 @@ async def chat_complete(messages: List[Dict[str, str]], timeout: float = 120.0) 
 
 async def get_embedding(text: str, timeout: float = 60.0) -> List[float]:
     """Return the embedding vector for a single text string."""
+    if settings.llm_provider == "openai":
+        embed_key = settings.embed_api_key or settings.llm_api_key
+        if not embed_key:
+            raise RuntimeError(
+                "Embeddings require EMBED_API_KEY (or LLM_API_KEY) to be set. "
+                "Add it in Vercel → Settings → Environment Variables, then redeploy."
+            )
     url = _embed_url()
     headers = _auth_headers(use_embed_key=True)
 
