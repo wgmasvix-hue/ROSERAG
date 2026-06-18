@@ -10,8 +10,21 @@
 
 <div class="shell">
 
+  <!-- ═══════════ MOBILE TOPBAR ═══════════ -->
+  <header class="mobile-topbar" id="mobile-topbar">
+    <button class="hamburger" id="hamburger" aria-label="Open menu">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="3" y1="7" x2="21" y2="7"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="17" x2="21" y2="17"/>
+      </svg>
+    </button>
+    <div class="mobile-brand">
+      <span class="brand-rose">ROSE</span><span class="brand-rag">RAG</span>
+    </div>
+    <span class="status-dot" id="status-dot-m"></span>
+  </header>
+
   <!-- ═══════════ LEFT SIDEBAR ═══════════ -->
-  <nav class="nav-sidebar">
+  <nav class="nav-sidebar" id="nav-sidebar">
     <div class="nav-brand">
       <span class="brand-rose">ROSE</span><span class="brand-rag">RAG</span>
       <span class="brand-version">v2.0</span>
@@ -212,6 +225,9 @@
 
   <!-- ═══════════ RIGHT PANEL ═══════════ -->
   <aside class="right-panel" id="right-panel">
+    <button class="rp-close" id="rp-close" aria-label="Close">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
     <div class="rp-placeholder" id="rp-placeholder">
       <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
       <p>Ask a question to see trust score and source evidence here.</p>
@@ -240,6 +256,9 @@
 
     </div>
   </aside>
+
+  <!-- Mobile backdrop (nav + evidence panel) -->
+  <div class="nav-overlay" id="nav-overlay"></div>
 
 </div>
 

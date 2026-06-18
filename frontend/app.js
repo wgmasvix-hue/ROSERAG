@@ -28,6 +28,7 @@ document.querySelectorAll(".nav-item").forEach(btn => {
     document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
     $(`view-${view}`).classList.add("active");
     onViewActivated(view);
+    closeSidebar(); // auto-close drawer on mobile
   });
 });
 
@@ -40,16 +41,17 @@ function onViewActivated(view) {
 
 // ══ Health ═══════════════════════════════════════════════════
 async function checkHealth() {
-  try {
-    const res = await fetch(`${API}/api/health`);
-    if (res.ok) {
-      statusDot.className = "status-dot online";
-      statusLabel.textContent = "System online";
-    } else throw new Error();
-  } catch {
-    statusDot.className = "status-dot offline";
-    statusLabel.textContent = "Offline";
-  }
+  const online = (() => {
+    try {
+      return fetch(`${API}/api/health`).then(r => r.ok);
+    } catch { return Promise.resolve(false); }
+  })();
+
+  online.then(ok => {
+    const cls = ok ? "status-dot online" : "status-dot offline";
+    document.querySelectorAll(".status-dot").forEach(d => d.className = cls);
+    if (statusLabel) statusLabel.textContent = ok ? "System online" : "Offline";
+  });
 }
 
 // ══ Ask / Chat ════════════════════════════════════════════════
@@ -151,9 +153,28 @@ function appendThinking() {
 }
 
 // ══ Right Panel ═══════════════════════════════════════════════
+function openRightPanel() {
+  const rp = $("right-panel");
+  const overlay = $("nav-overlay");
+  rp.classList.add("rp-open");
+  // Show overlay only on tablet/mobile where the panel is a floating overlay
+  if (window.innerWidth < 1024) {
+    overlay.classList.add("visible");
+    overlay.onclick = closeRightPanel;
+  }
+}
+
+function closeRightPanel() {
+  $("right-panel").classList.remove("rp-open");
+  const overlay = $("nav-overlay");
+  overlay.classList.remove("visible");
+  overlay.onclick = null;
+}
+
 function showRightPanel(data) {
   rpPlaceholder.classList.add("hidden");
   rpContent.classList.remove("hidden");
+  openRightPanel();
 
   // Trust
   const trust = data.trust || {};
@@ -485,6 +506,37 @@ function fmtDate(iso) {
     });
   } catch { return iso; }
 }
+
+// ══ Mobile Sidebar ════════════════════════════════════════════
+function openSidebar() {
+  $("nav-sidebar").classList.add("nav-open");
+  const overlay = $("nav-overlay");
+  overlay.classList.add("visible");
+  overlay.onclick = closeSidebar;
+}
+
+function closeSidebar() {
+  $("nav-sidebar").classList.remove("nav-open");
+  // Only clear overlay if right panel isn't open
+  if (!$("right-panel").classList.contains("rp-open")) {
+    $("nav-overlay").classList.remove("visible");
+    $("nav-overlay").onclick = null;
+  }
+}
+
+const hamburger = $("hamburger");
+if (hamburger) {
+  hamburger.addEventListener("click", () => {
+    if ($("nav-sidebar").classList.contains("nav-open")) {
+      closeSidebar();
+    } else {
+      openSidebar();
+    }
+  });
+}
+
+const rpClose = $("rp-close");
+if (rpClose) rpClose.addEventListener("click", closeRightPanel);
 
 // ══ Init ═══════════════════════════════════════════════════════
 checkHealth();
