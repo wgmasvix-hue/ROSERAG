@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     chunk_size: int = 1000
     chunk_overlap: int = 200
     top_k: int = 5
+    data_dir: str = "data"
 
     model_config = {"env_file": ".env"}
 

@@ -4,6 +4,8 @@ import fitz  # PyMuPDF
 from .chunking import chunk_document_pages
 from .embeddings import embed_batch
 from .vector_store import ensure_collection, upsert_chunks
+from ..services import memory_service
+from ..services.graph_service import get_graph, extract_entities
 
 
 def extract_pages(pdf_bytes: bytes) -> list[Dict[str, Any]]:
@@ -38,6 +40,25 @@ async def ingest_document(
     ensure_collection(vector_size=vector_size)
 
     upsert_chunks(chunks, embeddings)
+
+    # Persist metadata for accurate ingested_at timestamps
+    memory_service.save_document(
+        doc_id=doc_id,
+        filename=filename,
+        pages=len(pages),
+        chunks=len(chunks),
+    )
+
+    # Populate knowledge graph from extracted entities
+    graph = get_graph()
+    for chunk in chunks:
+        entities = extract_entities(
+            text=chunk["text"],
+            doc_id=doc_id,
+            doc_name=filename,
+        )
+        if entities:
+            graph.add_entities(entities)
 
     return {
         "document_id": doc_id,

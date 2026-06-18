@@ -1,6 +1,8 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from ..core.ingestion import ingest_document
 from ..core.vector_store import list_unique_documents, delete_document_chunks
+from ..services import memory_service
+from ..services.graph_service import get_graph
 from ..models.schemas import IngestResponse, DocumentListResponse, DocumentMetadata, DeleteResponse
 from datetime import datetime, timezone
 
@@ -36,6 +38,24 @@ async def upload_document(file: UploadFile = File(...)):
 
 @router.get("", response_model=DocumentListResponse)
 async def list_documents():
+    # Prefer persistent metadata (accurate ingested_at); fall back to Qdrant scroll
+    try:
+        db_docs = memory_service.list_documents()
+        if db_docs:
+            metadata = [
+                DocumentMetadata(
+                    id=d["doc_id"],
+                    filename=d["filename"],
+                    pages=d["pages"],
+                    chunks=d["chunks"],
+                    ingested_at=d["ingested_at"],
+                )
+                for d in db_docs
+            ]
+            return DocumentListResponse(documents=metadata, total=len(metadata))
+    except Exception:
+        pass
+
     try:
         docs = list_unique_documents()
     except Exception as e:
@@ -58,6 +78,8 @@ async def list_documents():
 async def delete_document(document_id: str):
     try:
         delete_document_chunks(doc_id=document_id)
+        memory_service.delete_document(doc_id=document_id)
+        get_graph().clear_document(doc_id=document_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Deletion failed: {str(e)}")
 

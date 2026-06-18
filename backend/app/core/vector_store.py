@@ -42,6 +42,7 @@ def upsert_chunks(chunks: List[Dict[str, Any]], embeddings: List[List[float]]) -
                 id=point_id,
                 vector=vector,
                 payload={
+                    "chunk_id": point_id,
                     "text": chunk["text"],
                     "doc_id": chunk["doc_id"],
                     "doc_name": chunk["doc_name"],
@@ -77,6 +78,7 @@ def search_chunks(
 
     return [
         {
+            "chunk_id": r.payload.get("chunk_id", str(r.id)),
             "text": r.payload["text"],
             "doc_id": r.payload["doc_id"],
             "doc_name": r.payload["doc_name"],
@@ -86,6 +88,26 @@ def search_chunks(
         }
         for r in results
     ]
+
+
+def get_chunk_by_id(chunk_id: str) -> Optional[Dict[str, Any]]:
+    client = get_client()
+    results = client.retrieve(
+        collection_name=settings.collection_name,
+        ids=[chunk_id],
+        with_payload=True,
+    )
+    if not results:
+        return None
+    r = results[0]
+    return {
+        "chunk_id": r.payload.get("chunk_id", str(r.id)),
+        "text": r.payload["text"],
+        "doc_id": r.payload["doc_id"],
+        "doc_name": r.payload["doc_name"],
+        "page": r.payload["page"],
+        "chunk_index": r.payload["chunk_index"],
+    }
 
 
 def delete_document_chunks(doc_id: str) -> int:

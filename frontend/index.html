@@ -3,86 +3,246 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ROSERAG — Institutional Knowledge Assistant</title>
+  <title>ROSERAG — Institutional Intelligence Platform</title>
   <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
-  <div class="layout">
 
-    <!-- Sidebar -->
-    <aside class="sidebar">
-      <div class="sidebar-header">
-        <div class="brand">
-          <span class="brand-rose">ROSE</span><span class="brand-rag">RAG</span>
-        </div>
-        <p class="brand-tagline">Retrieve · Reason · Respond</p>
+<div class="shell">
+
+  <!-- ═══════════ LEFT SIDEBAR ═══════════ -->
+  <nav class="nav-sidebar">
+    <div class="nav-brand">
+      <span class="brand-rose">ROSE</span><span class="brand-rag">RAG</span>
+      <span class="brand-version">v2.0</span>
+    </div>
+    <p class="nav-tagline">Institutional Intelligence Platform</p>
+
+    <div class="nav-links">
+      <button class="nav-item active" data-view="ask">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Ask ROSERAG
+      </button>
+      <button class="nav-item" data-view="documents">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Documents
+      </button>
+      <button class="nav-item" data-view="graph">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        Knowledge Graph
+      </button>
+      <button class="nav-item" data-view="analytics">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Analytics
+      </button>
+      <button class="nav-item" data-view="history">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        History
+      </button>
+      <button class="nav-item" data-view="copilot">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Copilot
+      </button>
+    </div>
+
+    <div class="nav-footer">
+      <div class="system-status">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-label">Connecting…</span>
       </div>
+    </div>
+  </nav>
 
-      <div class="sidebar-section">
-        <h3 class="section-label">Knowledge Base</h3>
+  <!-- ═══════════ CENTER PANEL ═══════════ -->
+  <main class="center-panel">
 
-        <label class="upload-btn" id="upload-label">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-          Upload PDF
-          <input type="file" id="file-input" accept=".pdf" hidden multiple />
-        </label>
-
-        <div id="upload-status" class="upload-status hidden"></div>
-
-        <div id="doc-list" class="doc-list">
-          <div class="doc-empty">No documents ingested yet.</div>
-        </div>
+    <!-- VIEW: Ask -->
+    <div class="view active" id="view-ask">
+      <div class="view-header">
+        <h1>Ask ROSERAG</h1>
+        <p>Evidence-grounded answers from your institutional knowledge base</p>
       </div>
-
-      <div class="sidebar-footer">
-        <div class="system-status">
-          <span class="status-dot" id="status-dot"></span>
-          <span id="status-label">Checking…</span>
-        </div>
-      </div>
-    </aside>
-
-    <!-- Main -->
-    <main class="main">
-      <div class="chat-header">
-        <div>
-          <h1 class="chat-title">Academic Research Assistant</h1>
-          <p class="chat-subtitle">Evidence-grounded answers from your institutional knowledge base</p>
-        </div>
-      </div>
-
       <div class="chat-messages" id="chat-messages">
-        <div class="welcome-message">
+        <div class="welcome-block">
           <div class="welcome-icon">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
           </div>
-          <h2>Welcome to ROSERAG</h2>
-          <p>Upload institutional documents on the left, then ask evidence-based questions. Every answer includes source citations and a confidence score.</p>
-          <div class="welcome-hints">
-            <div class="hint">"What research has been conducted on food security?"</div>
-            <div class="hint">"Summarize the key findings from the policy documents."</div>
-            <div class="hint">"What evidence supports this recommendation?"</div>
+          <h2>Institutional Intelligence</h2>
+          <p>Upload documents, then ask questions grounded in your institutional knowledge. Every answer includes source citations, trust score, and evidence trails.</p>
+          <div class="hint-grid">
+            <div class="hint-chip" data-q="What are the key research findings in the uploaded documents?">Key findings</div>
+            <div class="hint-chip" data-q="What policies govern research at this institution?">Research policies</div>
+            <div class="hint-chip" data-q="Summarize the main themes across all documents.">Main themes</div>
+            <div class="hint-chip" data-q="What evidence supports the primary recommendations?">Evidence review</div>
           </div>
         </div>
       </div>
-
-      <div class="chat-input-area">
-        <div class="chat-input-wrap">
-          <textarea
-            id="chat-input"
-            placeholder="Ask a question grounded in your institutional knowledge…"
-            rows="1"
-          ></textarea>
-          <button id="send-btn" class="send-btn" title="Send">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      <div class="chat-composer">
+        <div class="composer-wrap">
+          <textarea id="chat-input" placeholder="Ask an evidence-based question…" rows="1"></textarea>
+          <button id="send-btn" class="btn-send">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           </button>
         </div>
-        <p class="input-disclaimer">Answers are sourced exclusively from your uploaded documents.</p>
+        <p class="composer-note">Answers sourced exclusively from uploaded institutional documents</p>
       </div>
-    </main>
+    </div>
 
-  </div>
+    <!-- VIEW: Documents -->
+    <div class="view" id="view-documents">
+      <div class="view-header">
+        <h1>Knowledge Base</h1>
+        <p>Manage the institutional documents that power ROSERAG</p>
+      </div>
+      <div class="view-body">
+        <div class="docs-toolbar">
+          <label class="btn-upload">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+            Upload PDF
+            <input type="file" id="file-input" accept=".pdf" hidden multiple />
+          </label>
+          <div id="upload-status" class="upload-status hidden"></div>
+        </div>
+        <div id="doc-table-wrap">
+          <table class="data-table" id="doc-table">
+            <thead>
+              <tr><th>Document</th><th>Pages</th><th>Chunks</th><th>Ingested</th><th></th></tr>
+            </thead>
+            <tbody id="doc-tbody">
+              <tr><td colspan="5" class="empty-row">No documents in knowledge base.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
-  <script src="/static/app.js"></script>
+    <!-- VIEW: Knowledge Graph -->
+    <div class="view" id="view-graph">
+      <div class="view-header">
+        <h1>Knowledge Graph</h1>
+        <p>Entities and relationships extracted from institutional documents</p>
+      </div>
+      <div class="view-body">
+        <div class="graph-controls">
+          <select id="graph-filter" class="select-input">
+            <option value="">All entity types</option>
+            <option value="ORGANIZATION">Organizations</option>
+            <option value="PERSON">People</option>
+            <option value="TOPIC">Topics</option>
+            <option value="LOCATION">Locations</option>
+          </select>
+          <button class="btn-secondary" id="graph-refresh">Refresh</button>
+        </div>
+        <div id="graph-stats" class="stat-row"></div>
+        <div id="graph-entity-list" class="entity-list"></div>
+      </div>
+    </div>
+
+    <!-- VIEW: Analytics -->
+    <div class="view" id="view-analytics">
+      <div class="view-header">
+        <h1>Research Analytics</h1>
+        <p>Intelligence metrics for your institutional knowledge system</p>
+      </div>
+      <div class="view-body" id="analytics-body">
+        <div class="loading-state">Loading analytics…</div>
+      </div>
+    </div>
+
+    <!-- VIEW: History -->
+    <div class="view" id="view-history">
+      <div class="view-header">
+        <h1>Question History</h1>
+        <p>Audit trail of all institutional queries and evidence-grounded answers</p>
+      </div>
+      <div class="view-body">
+        <div id="history-list" class="history-list">
+          <div class="loading-state">Loading history…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW: Copilot -->
+    <div class="view" id="view-copilot">
+      <div class="view-header">
+        <h1>Institutional Copilot</h1>
+        <p>Specialized agents for domain-specific institutional intelligence</p>
+      </div>
+      <div class="view-body">
+        <div class="agent-selector">
+          <div class="agent-card active" data-agent="research">
+            <div class="agent-icon">🔬</div>
+            <div class="agent-name">Research Analyst</div>
+            <div class="agent-desc">Synthesizes findings across studies</div>
+          </div>
+          <div class="agent-card" data-agent="librarian">
+            <div class="agent-icon">📚</div>
+            <div class="agent-name">Librarian</div>
+            <div class="agent-desc">Guides discovery and citation</div>
+          </div>
+          <div class="agent-card" data-agent="policy">
+            <div class="agent-icon">⚖️</div>
+            <div class="agent-name">Policy Advisor</div>
+            <div class="agent-desc">Interprets institutional policies</div>
+          </div>
+          <div class="agent-card" data-agent="compliance">
+            <div class="agent-icon">✅</div>
+            <div class="agent-name">Compliance Officer</div>
+            <div class="agent-desc">Assesses audit readiness</div>
+          </div>
+          <div class="agent-card" data-agent="executive">
+            <div class="agent-icon">📊</div>
+            <div class="agent-name">Executive Briefing</div>
+            <div class="agent-desc">Concise strategic insights</div>
+          </div>
+        </div>
+        <div class="copilot-composer">
+          <div class="composer-wrap">
+            <textarea id="copilot-input" placeholder="Ask the selected agent a question…" rows="2"></textarea>
+            <button id="copilot-send" class="btn-send">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+        </div>
+        <div id="copilot-result" class="copilot-result hidden"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ═══════════ RIGHT PANEL ═══════════ -->
+  <aside class="right-panel" id="right-panel">
+    <div class="rp-placeholder" id="rp-placeholder">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      <p>Ask a question to see trust score and source evidence here.</p>
+    </div>
+
+    <div class="rp-content hidden" id="rp-content">
+
+      <!-- Trust Score -->
+      <div class="rp-section">
+        <h3 class="rp-label">Trust Assessment</h3>
+        <div class="trust-display" id="trust-display">
+          <div class="trust-badge" id="trust-badge">—</div>
+          <div class="trust-score-row">
+            <span class="trust-score-label">Score</span>
+            <span class="trust-score-value" id="trust-score">—</span>
+          </div>
+          <div class="trust-components" id="trust-components"></div>
+        </div>
+      </div>
+
+      <!-- Sources -->
+      <div class="rp-section">
+        <h3 class="rp-label">Evidence Sources</h3>
+        <div id="rp-sources" class="rp-sources"></div>
+      </div>
+
+    </div>
+  </aside>
+
+</div>
+
+<script src="/static/app.js"></script>
 </body>
 </html>

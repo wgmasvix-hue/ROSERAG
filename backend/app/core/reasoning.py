@@ -1,8 +1,10 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import httpx
 from ..config import settings
 from .embeddings import embed_text
 from .vector_store import search_chunks
+from ..services.trust_service import compute_trust
+from ..services import memory_service
 
 
 SYSTEM_PROMPT = """You are ROSERAG — an institutional knowledge assistant for universities, research institutions, and knowledge-intensive organizations.
@@ -49,6 +51,8 @@ async def generate_answer(
     question: str,
     history: List[Dict[str, str]],
     top_k: int = 5,
+    persist_history: bool = True,
+    session_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     query_vector = await embed_text(question)
     chunks = search_chunks(query_vector, top_k=top_k)
@@ -88,19 +92,40 @@ Provide a thorough, evidence-grounded answer. Reference the source documents by 
         response.raise_for_status()
         answer = response.json()["message"]["content"]
 
+    trust = compute_trust(chunks, top_k=top_k)
+    confidence = compute_confidence(chunks)
+
     sources = [
         {
             "document": c["doc_name"],
+            "chunk_id": c.get("chunk_id", ""),
             "page": c["page"],
             "excerpt": c["text"][:300] + ("..." if len(c["text"]) > 300 else ""),
+            "chunk": c["text"][:500] + ("..." if len(c["text"]) > 500 else ""),
             "score": round(c["score"], 4),
         }
         for c in chunks
     ]
 
+    if persist_history:
+        try:
+            memory_service.save_question(
+                question=question,
+                answer=answer,
+                confidence=confidence,
+                trust_score=trust["trust_score"],
+                trust_level=trust["trust_level"],
+                sources=sources,
+                retrieved_chunks=len(chunks),
+                session_id=session_id,
+            )
+        except Exception:
+            pass  # History persistence must not break the answer flow
+
     return {
         "answer": answer,
         "sources": sources,
-        "confidence": compute_confidence(chunks),
+        "confidence": confidence,
+        "trust": trust,
         "retrieved_chunks": len(chunks),
     }
