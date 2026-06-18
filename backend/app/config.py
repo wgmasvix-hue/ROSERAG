@@ -7,6 +7,8 @@ class Settings(BaseSettings):
     chat_model: str = "llama3.2"
     qdrant_host: str = "localhost"
     qdrant_port: int = 6333
+    qdrant_api_key: str = ""
+    qdrant_use_https: bool = False
     collection_name: str = "roserag"
     chunk_size: int = 1000
     chunk_overlap: int = 200

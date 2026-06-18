@@ -18,7 +18,15 @@ _client: Optional[QdrantClient] = None
 def get_client() -> QdrantClient:
     global _client
     if _client is None:
-        _client = QdrantClient(host=settings.qdrant_host, port=settings.qdrant_port)
+        if settings.qdrant_use_https or settings.qdrant_api_key:
+            # Qdrant Cloud: connect via HTTPS with API key
+            _client = QdrantClient(
+                url=f"https://{settings.qdrant_host}:{settings.qdrant_port}",
+                api_key=settings.qdrant_api_key or None,
+            )
+        else:
+            # Local Qdrant: plain HTTP
+            _client = QdrantClient(host=settings.qdrant_host, port=settings.qdrant_port)
     return _client
 
 
