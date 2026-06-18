@@ -14,6 +14,12 @@ class Settings(BaseSettings):
     chunk_overlap: int = 200
     top_k: int = 5
     data_dir: str = "data"
+    # LLM provider: "ollama" (default) or "openai" (any OpenAI-compatible API)
+    llm_provider: str = "ollama"
+    llm_api_key: str = ""       # API key for cloud provider
+    llm_api_base: str = ""      # e.g. https://api.groq.com/openai  (blank = OpenAI)
+    embed_api_base: str = ""    # separate base URL for embeddings (blank = llm_api_base)
+    embed_api_key: str = ""     # separate key for embeddings (blank = llm_api_key)
 
     model_config = {"env_file": ".env"}
 

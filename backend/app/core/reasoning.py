@@ -1,7 +1,7 @@
 from typing import List, Dict, Any, Optional
-import httpx
 from ..config import settings
 from .embeddings import embed_text
+from .llm_client import chat_complete
 from .vector_store import search_chunks
 from ..services.trust_service import compute_trust
 from ..services import memory_service
@@ -77,20 +77,12 @@ Question: {question}
 
 Provide a thorough, evidence-grounded answer. Reference the source documents by name and page number."""
 
-    async with httpx.AsyncClient(timeout=120.0) as client:
-        response = await client.post(
-            f"{settings.ollama_base_url}/api/chat",
-            json={
-                "model": settings.chat_model,
-                "messages": [
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": user_message},
-                ],
-                "stream": False,
-            },
-        )
-        response.raise_for_status()
-        answer = response.json()["message"]["content"]
+    answer = await chat_complete(
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_message},
+        ]
+    )
 
     trust = compute_trust(chunks, top_k=top_k)
     confidence = compute_confidence(chunks)
