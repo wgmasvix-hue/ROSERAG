@@ -1,0 +1,81 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+      prerelease:
+        description: 'Pre-release?'
+        type: boolean
+        default: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create tag and release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.version }}
+          name: ROSERAG ${{ github.event.inputs.version }}
+          prerelease: ${{ github.event.inputs.prerelease }}
+          generate_release_notes: false
+          body: |
+            ## ROSERAG ${{ github.event.inputs.version }}
+
+            ### What's new in this release
+
+            **Angular 17 UI — DSpace-inspired design**
+            - Full standalone-component Angular 17 frontend with lazy-loaded routes
+            - 6 pages: Ask, Browse, Knowledge Graph, Analytics, History, Copilots
+            - Mobile-responsive, CSS custom properties for institution branding
+
+            **Institutional Copilots**
+            - 5 specialist agents: Research, Librarian, Policy, Compliance, Executive
+            - Each agent has its own private document upload panel
+            - Agent-tagged documents are scoped to their agent; global docs shared by all
+
+            **DSpace Bridge**
+            - Unified search across arXiv, OpenAlex, Semantic Scholar + local DSpace 7.x
+            - One-click import: downloads paper PDF/text and ingests into knowledge base
+            - Configure local DSpace via `DSPACE_URL` in `.env`
+
+            **Multi-format ingestion**
+            - Supports PDF, DOCX, TXT, MD, CSV, JSON, HTML/HTM
+            - `roserag ingest <path>` CLI command for bulk local ingestion
+
+            **Jina AI v5 embeddings**
+            - Upgraded to `jina-embeddings-v5-omni-nano` (1024-dim)
+            - Task-aware: `retrieval.passage` for ingestion, `retrieval.query` for search
+
+            **Pip-installable CLI**
+            ```bash
+            pip install -e .
+            roserag init      # interactive setup wizard
+            roserag install   # npm + Angular build
+            roserag start     # launch server
+            roserag ingest ./my-docs/
+            ```
+
+            ### Quick start
+            ```bash
+            git clone https://github.com/wgmasvix-hue/roserag
+            cd roserag
+            pip install -e .
+            roserag init
+            roserag start
+            ```
+
+            ### Environment variables
+            Copy `.env.example` to `.env` and configure:
+            - `LLM_PROVIDER=openai` + `LLM_API_KEY` (DeepSeek)
+            - `EMBED_API_KEY` (Jina AI)
+            - `QDRANT_HOST` / `QDRANT_API_KEY`
+            - `DSPACE_URL` (optional, for local DSpace integration)
