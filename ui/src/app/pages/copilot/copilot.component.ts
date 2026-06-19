@@ -34,6 +34,7 @@ export class CopilotComponent implements OnInit, OnDestroy {
     { id: 'policy',     label: 'Policy',     icon: '📋', description: 'Policy interpretation and compliance guidance',  color: '#f59e0b' },
     { id: 'compliance', label: 'Compliance', icon: '✅', description: 'Regulatory checks and audit trail support',      color: '#10b981' },
     { id: 'executive',  label: 'Executive',  icon: '📊', description: 'Strategic summaries and decision support',       color: '#ef4444' },
+    { id: 'reasoner',   label: 'Reasoner',   icon: '🧠', description: 'DeepSeek R1 chain-of-thought for complex analysis', color: '#6d28d9' },
   ];
 
   selectedAgent: AgentDef = this.agents[0];

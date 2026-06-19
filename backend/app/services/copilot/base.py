@@ -22,6 +22,7 @@ class AgentType(str, Enum):
     POLICY      = "policy"
     COMPLIANCE  = "compliance"
     EXECUTIVE   = "executive"
+    REASONER    = "reasoner"
 
 
 class BaseAgent(ABC):

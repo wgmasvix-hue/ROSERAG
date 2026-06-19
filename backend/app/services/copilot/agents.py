@@ -9,7 +9,7 @@ orchestration are future work; this module establishes the architecture.
 from typing import Dict, Any, List
 
 from .base import BaseAgent, AgentType
-from ...core.llm_client import chat_complete
+from ...core.llm_client import chat_complete, chat_complete_with_reasoning
 
 
 def _build_context(chunks: List[Dict[str, Any]]) -> str:
@@ -123,12 +123,41 @@ Avoid jargon. Lead with the most critical finding. Be brief and direct."""
         }
 
 
+class ReasonerAgent(BaseAgent):
+    agent_type  = AgentType.REASONER
+    description = "Uses DeepSeek R1's chain-of-thought reasoning for complex multi-step analysis."
+    system_prompt = """You are a deep analytical reasoner with access to institutional documents.
+Think through the problem step by step. Consider multiple angles, potential contradictions,
+and edge cases before reaching your conclusion. Be thorough in your reasoning but concise
+in your final answer. Ground every claim in the provided document context."""
+
+    async def run(self, query: str, chunks: List[Dict[str, Any]]) -> Dict[str, Any]:
+        context = _build_context(chunks)
+        user_msg = (
+            f"Document context:\n{context}\n\n"
+            f"Question: {query}\n\n"
+            "Think through this carefully, then provide a well-reasoned answer."
+        )
+        answer, reasoning = await chat_complete_with_reasoning(
+            messages=[
+                {"role": "system", "content": self.system_prompt},
+                {"role": "user",   "content": user_msg},
+            ]
+        )
+        return {
+            "answer":          answer,
+            "agent":           self.agent_type,
+            "reasoning_notes": reasoning or "Chain-of-thought reasoning applied.",
+        }
+
+
 AGENT_REGISTRY: Dict[AgentType, BaseAgent] = {
     AgentType.RESEARCH:   ResearchAgent(),
     AgentType.LIBRARIAN:  LibrarianAgent(),
     AgentType.POLICY:     PolicyAgent(),
     AgentType.COMPLIANCE: ComplianceAgent(),
     AgentType.EXECUTIVE:  ExecutiveAgent(),
+    AgentType.REASONER:   ReasonerAgent(),
 }
 
 

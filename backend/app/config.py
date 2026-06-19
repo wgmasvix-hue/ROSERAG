@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     llm_api_key: str = ""
     llm_api_base: str = "https://api.deepseek.com"
     chat_model: str = "deepseek-chat"
+    # Reasoner — DeepSeek R1 chain-of-thought model (set REASONER_MODEL=deepseek-reasoner)
+    reasoner_model: str = "deepseek-reasoner"
 
     # Embeddings — pre-configured for Jina AI; override with EMBED_* env vars
     embed_api_key: str = ""
