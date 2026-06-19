@@ -23,25 +23,25 @@ from ..config import settings
 
 
 def _chat_model() -> str:
-    return settings.chat_model if settings.llm_provider == "openai" else settings.ollama_chat_model
+    return settings.chat_model if settings.effective_provider == "openai" else settings.ollama_chat_model
 
 
 def _reasoner_model() -> str:
-    return settings.reasoner_model if settings.llm_provider == "openai" else settings.ollama_chat_model
+    return settings.reasoner_model if settings.effective_provider == "openai" else settings.ollama_chat_model
 
 
 def _embed_model() -> str:
-    return settings.embed_model if settings.llm_provider == "openai" else settings.ollama_embed_model
+    return settings.embed_model if settings.effective_provider == "openai" else settings.ollama_embed_model
 
 
 def _chat_url() -> str:
-    if settings.llm_provider == "openai":
+    if settings.effective_provider == "openai":
         return f"{settings.llm_api_base.rstrip('/')}/v1/chat/completions"
     return f"{settings.ollama_base_url}/api/chat"
 
 
 def _embed_url() -> str:
-    if settings.llm_provider == "openai":
+    if settings.effective_provider == "openai":
         base = (settings.embed_api_base or settings.llm_api_base).rstrip("/")
         return f"{base}/v1/embeddings"
     return f"{settings.ollama_base_url}/api/embeddings"
@@ -58,7 +58,7 @@ def _embed_headers() -> Dict[str, str]:
 
 
 def _check_config(for_what: str, need_embed: bool = False) -> None:
-    if settings.llm_provider != "openai":
+    if settings.effective_provider != "openai":
         return
     if not settings.llm_api_key:
         raise RuntimeError(
@@ -83,7 +83,7 @@ async def chat_complete(messages: List[Dict[str, str]], timeout: float = 120.0) 
         r.raise_for_status()
         data = r.json()
 
-    if settings.llm_provider == "openai":
+    if settings.effective_provider == "openai":
         return data["choices"][0]["message"]["content"]
     return data["message"]["content"]
 
@@ -100,7 +100,7 @@ async def chat_complete_with_reasoning(
     """
     _check_config("Chat")
 
-    if settings.llm_provider != "openai":
+    if settings.effective_provider != "openai":
         answer = await chat_complete(messages, timeout=timeout)
         return answer, ""
 
@@ -130,7 +130,7 @@ async def get_embedding(
     url = _embed_url()
 
     async with httpx.AsyncClient(timeout=timeout) as client:
-        if settings.llm_provider == "openai":
+        if settings.effective_provider == "openai":
             payload: Dict = {"model": _embed_model(), "input": text}
             if _is_jina_v5():
                 payload["task"] = task
@@ -148,21 +148,21 @@ async def get_embedding(
 
 
 def _chat_model() -> str:
-    return settings.chat_model if settings.llm_provider == "openai" else settings.ollama_chat_model
+    return settings.chat_model if settings.effective_provider == "openai" else settings.ollama_chat_model
 
 
 def _embed_model() -> str:
-    return settings.embed_model if settings.llm_provider == "openai" else settings.ollama_embed_model
+    return settings.embed_model if settings.effective_provider == "openai" else settings.ollama_embed_model
 
 
 def _chat_url() -> str:
-    if settings.llm_provider == "openai":
+    if settings.effective_provider == "openai":
         return f"{settings.llm_api_base.rstrip('/')}/v1/chat/completions"
     return f"{settings.ollama_base_url}/api/chat"
 
 
 def _embed_url() -> str:
-    if settings.llm_provider == "openai":
+    if settings.effective_provider == "openai":
         base = (settings.embed_api_base or settings.llm_api_base).rstrip("/")
         return f"{base}/v1/embeddings"
     return f"{settings.ollama_base_url}/api/embeddings"
@@ -179,7 +179,7 @@ def _embed_headers() -> Dict[str, str]:
 
 
 def _check_config(for_what: str, need_embed: bool = False) -> None:
-    if settings.llm_provider != "openai":
+    if settings.effective_provider != "openai":
         return
     if not settings.llm_api_key:
         raise RuntimeError(
@@ -204,7 +204,7 @@ async def chat_complete(messages: List[Dict[str, str]], timeout: float = 120.0) 
         r.raise_for_status()
         data = r.json()
 
-    if settings.llm_provider == "openai":
+    if settings.effective_provider == "openai":
         return data["choices"][0]["message"]["content"]
     return data["message"]["content"]
 
@@ -221,7 +221,7 @@ async def get_embedding(
     url = _embed_url()
 
     async with httpx.AsyncClient(timeout=timeout) as client:
-        if settings.llm_provider == "openai":
+        if settings.effective_provider == "openai":
             payload: Dict = {"model": _embed_model(), "input": text}
             # Jina v5 supports task hints for improved retrieval accuracy
             if _is_jina_v5():

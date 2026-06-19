@@ -18,6 +18,10 @@ Core principles:
 - Synthesize across multiple sources when relevant.
 - Distinguish between what is stated and what is inferred."""
 
+FALLBACK_PROMPT = """You are ROSERAG — an institutional intelligence assistant. No documents have been uploaded to the knowledge base yet, so you are operating in general assistant mode.
+
+Answer helpfully and accurately. When relevant, remind the user that uploading documents will enable evidence-grounded answers with source citations and trust scores."""
+
 
 def build_context_block(chunks: List[Dict[str, Any]]) -> str:
     lines = []
@@ -54,16 +58,33 @@ async def generate_answer(
     persist_history: bool = True,
     session_id: Optional[str] = None,
 ) -> Dict[str, Any]:
-    query_vector = await embed_text(question)
-    chunks = search_chunks(query_vector, top_k=top_k)
+    # Try RAG pipeline — degrade gracefully if Qdrant/Jina not configured
+    chunks: List[Dict[str, Any]] = []
+    try:
+        query_vector = await embed_text(question)
+        chunks = search_chunks(query_vector, top_k=top_k)
+    except Exception:
+        pass  # No embeddings/Qdrant → fall through to pure-LLM mode
 
     if not chunks:
-        return {
-            "answer": "No relevant documents found in the knowledge base. Please upload documents before querying.",
-            "sources": [],
-            "confidence": 0.0,
-            "retrieved_chunks": 0,
-        }
+        # Pure LLM fallback — still useful without documents
+        history_text = build_history_block(history)
+        msgs = [{"role": "system", "content": FALLBACK_PROMPT}]
+        if history_text:
+            msgs.append({"role": "user", "content": history_text})
+        msgs.append({"role": "user", "content": question})
+        answer = await chat_complete(msgs)
+        trust = {"trust_score": 0.0, "trust_level": "LOW", "components": {}}
+        if persist_history:
+            try:
+                memory_service.save_question(
+                    question=question, answer=answer, confidence=0.0,
+                    trust_score=0.0, trust_level="LOW", sources=[],
+                    retrieved_chunks=0, session_id=session_id,
+                )
+            except Exception:
+                pass
+        return {"answer": answer, "sources": [], "confidence": 0.0, "trust": trust, "retrieved_chunks": 0}
 
     context = build_context_block(chunks)
     history_text = build_history_block(history)

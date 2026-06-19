@@ -15,18 +15,18 @@ class Settings(BaseSettings):
     ollama_chat_model: str = "llama3.2"
     ollama_embed_model: str = "nomic-embed-text"
 
-    # ── Cloud LLM provider (used when llm_provider = "openai") ──────
-    # Provider selection: "ollama" (default) or "openai" (any OpenAI-compat API)
+    # ── Cloud LLM provider ───────────────────────────────────────────
+    # "ollama" = local Ollama; "openai" = any OpenAI-compatible API.
+    # Auto-promotes to "openai" when LLM_API_KEY is set and provider is not forced.
     llm_provider: str = "ollama"
 
-    # Chat — pre-configured for DeepSeek; override with CHAT_MODEL env var
+    # Chat — pre-configured for DeepSeek
     llm_api_key: str = ""
     llm_api_base: str = "https://api.deepseek.com"
     chat_model: str = "deepseek-chat"
-    # Reasoner — DeepSeek R1 chain-of-thought model (set REASONER_MODEL=deepseek-reasoner)
     reasoner_model: str = "deepseek-reasoner"
 
-    # Embeddings — pre-configured for Jina AI; override with EMBED_* env vars
+    # Embeddings — pre-configured for Jina AI
     embed_api_key: str = ""
     embed_api_base: str = "https://api.jina.ai"
     embed_model: str = "jina-embeddings-v5-omni-nano"
@@ -45,15 +45,24 @@ class Settings(BaseSettings):
     data_dir: str = "data"
 
     # ── DSpace Bridge ────────────────────────────────────────────────
-    dspace_url: str = ""        # e.g. https://repo.myuniversity.edu
-    dspace_token: str = ""      # optional bearer token for auth
+    dspace_url: str = ""
+    dspace_token: str = ""
 
-    # ── Google Drive OAuth ────────────────────────────────────────
-    google_client_id:     str = ""
+    # ── Google Drive OAuth ───────────────────────────────────────────
+    google_client_id: str = ""
     google_client_secret: str = ""
-    app_url:              str = ""   # e.g. https://roserag-vje7.vercel.app
+    app_url: str = ""
 
     model_config = {"env_file": ".env"}
+
+    @property
+    def effective_provider(self) -> str:
+        """Auto-switch to openai when LLM_API_KEY is present."""
+        if self.llm_provider == "openai":
+            return "openai"
+        if self.llm_api_key:
+            return "openai"
+        return "ollama"
 
 
 settings = Settings()
