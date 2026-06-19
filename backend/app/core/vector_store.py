@@ -40,7 +40,11 @@ def ensure_collection(vector_size: int = 768) -> None:
         )
 
 
-def upsert_chunks(chunks: List[Dict[str, Any]], embeddings: List[List[float]]) -> int:
+def upsert_chunks(
+    chunks: List[Dict[str, Any]],
+    embeddings: List[List[float]],
+    agent_tag: str = "",
+) -> int:
     client = get_client()
     points = []
     for chunk, vector in zip(chunks, embeddings):
@@ -56,6 +60,7 @@ def upsert_chunks(chunks: List[Dict[str, Any]], embeddings: List[List[float]]) -
                     "doc_name": chunk["doc_name"],
                     "page": chunk["page"],
                     "chunk_index": chunk["chunk_index"],
+                    "agent_tag": agent_tag,
                 },
             )
         )
@@ -67,14 +72,26 @@ def search_chunks(
     query_vector: List[float],
     top_k: int = 5,
     doc_id_filter: Optional[str] = None,
+    agent_tag_filter: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     client = get_client()
 
-    search_filter = None
+    must_conditions = []
     if doc_id_filter:
+        must_conditions.append(FieldCondition(key="doc_id", match=MatchValue(value=doc_id_filter)))
+
+    search_filter = None
+    if agent_tag_filter:
+        # Return chunks belonging to this agent OR global (empty agent_tag)
         search_filter = Filter(
-            must=[FieldCondition(key="doc_id", match=MatchValue(value=doc_id_filter))]
+            should=[
+                FieldCondition(key="agent_tag", match=MatchValue(value=agent_tag_filter)),
+                FieldCondition(key="agent_tag", match=MatchValue(value="")),
+            ],
+            must=must_conditions if must_conditions else None,
         )
+    elif must_conditions:
+        search_filter = Filter(must=must_conditions)
 
     results = client.search(
         collection_name=settings.collection_name,
@@ -92,6 +109,7 @@ def search_chunks(
             "doc_name": r.payload["doc_name"],
             "page": r.payload["page"],
             "chunk_index": r.payload["chunk_index"],
+            "agent_tag": r.payload.get("agent_tag", ""),
             "score": r.score,
         }
         for r in results

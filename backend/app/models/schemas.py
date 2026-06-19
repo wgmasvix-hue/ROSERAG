@@ -11,6 +11,7 @@ class DocumentMetadata(BaseModel):
     pages: int
     chunks: int
     ingested_at: str
+    agent_tag: str = ""
 
 
 class ChunkResult(BaseModel):
@@ -181,6 +182,7 @@ class AnalyticsResponse(BaseModel):
 class IngestPathRequest(BaseModel):
     path: str
     recursive: bool = True
+    agent_tag: str = ""
 
 
 class IngestPathResult(BaseModel):

@@ -121,7 +121,9 @@ def extract_pages(filename: str, content: bytes) -> list[Dict[str, Any]]:
 
 # ── Main ingestion pipeline ───────────────────────────────────────────────────
 
-async def ingest_document(filename: str, content: bytes) -> Dict[str, Any]:
+async def ingest_document(
+    filename: str, content: bytes, agent_tag: str = ""
+) -> Dict[str, Any]:
     doc_id = str(uuid.uuid4())
 
     pages = extract_pages(filename, content)
@@ -136,13 +138,14 @@ async def ingest_document(filename: str, content: bytes) -> Dict[str, Any]:
     embeddings = await embed_batch(texts)
 
     ensure_collection(vector_size=len(embeddings[0]))
-    upsert_chunks(chunks, embeddings)
+    upsert_chunks(chunks, embeddings, agent_tag=agent_tag)
 
     memory_service.save_document(
         doc_id=doc_id,
         filename=filename,
         pages=len(pages),
         chunks=len(chunks),
+        agent_tag=agent_tag,
     )
 
     graph = get_graph()
@@ -156,4 +159,5 @@ async def ingest_document(filename: str, content: bytes) -> Dict[str, Any]:
         "filename": filename,
         "pages": len(pages),
         "chunks": len(chunks),
+        "agent_tag": agent_tag,
     }

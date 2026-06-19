@@ -31,9 +31,14 @@ def init_db() -> None:
             filename    TEXT NOT NULL,
             pages       INTEGER NOT NULL DEFAULT 0,
             chunks      INTEGER NOT NULL DEFAULT 0,
-            ingested_at TEXT NOT NULL
+            ingested_at TEXT NOT NULL,
+            agent_tag   TEXT NOT NULL DEFAULT ''
         )
     """)
+    # Migrate: add agent_tag if it doesn't exist yet (idempotent)
+    existing_cols = {row[1] for row in conn.execute("PRAGMA table_info(documents)").fetchall()}
+    if "agent_tag" not in existing_cols:
+        conn.execute("ALTER TABLE documents ADD COLUMN agent_tag TEXT NOT NULL DEFAULT ''")
     conn.execute("""
         CREATE TABLE IF NOT EXISTS questions (
             id              INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -54,39 +59,52 @@ def init_db() -> None:
 
 # ---- Document metadata ----
 
-def save_document(doc_id: str, filename: str, pages: int, chunks: int) -> None:
+def save_document(
+    doc_id: str, filename: str, pages: int, chunks: int, agent_tag: str = ""
+) -> None:
     ingested_at = datetime.now(timezone.utc).isoformat()
     conn = sqlite3.connect(_db_path())
     conn.execute(
         """
-        INSERT OR REPLACE INTO documents (doc_id, filename, pages, chunks, ingested_at)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT OR REPLACE INTO documents (doc_id, filename, pages, chunks, ingested_at, agent_tag)
+        VALUES (?, ?, ?, ?, ?, ?)
         """,
-        (doc_id, filename, pages, chunks, ingested_at),
+        (doc_id, filename, pages, chunks, ingested_at, agent_tag or ""),
     )
     conn.commit()
     conn.close()
 
 
+_DOC_COLS = ["doc_id", "filename", "pages", "chunks", "ingested_at", "agent_tag"]
+
+
 def get_document(doc_id: str) -> Optional[Dict[str, Any]]:
     conn = sqlite3.connect(_db_path())
     row = conn.execute(
-        "SELECT doc_id, filename, pages, chunks, ingested_at FROM documents WHERE doc_id = ?",
+        "SELECT doc_id, filename, pages, chunks, ingested_at, agent_tag FROM documents WHERE doc_id = ?",
         (doc_id,),
     ).fetchone()
     conn.close()
     if not row:
         return None
-    return dict(zip(["doc_id", "filename", "pages", "chunks", "ingested_at"], row))
+    return dict(zip(_DOC_COLS, row))
 
 
-def list_documents() -> List[Dict[str, Any]]:
+def list_documents(agent_tag: Optional[str] = None) -> List[Dict[str, Any]]:
     conn = sqlite3.connect(_db_path())
-    rows = conn.execute(
-        "SELECT doc_id, filename, pages, chunks, ingested_at FROM documents ORDER BY ingested_at DESC"
-    ).fetchall()
+    if agent_tag is not None:
+        rows = conn.execute(
+            "SELECT doc_id, filename, pages, chunks, ingested_at, agent_tag "
+            "FROM documents WHERE agent_tag = ? ORDER BY ingested_at DESC",
+            (agent_tag,),
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT doc_id, filename, pages, chunks, ingested_at, agent_tag "
+            "FROM documents ORDER BY ingested_at DESC"
+        ).fetchall()
     conn.close()
-    return [dict(zip(["doc_id", "filename", "pages", "chunks", "ingested_at"], r)) for r in rows]
+    return [dict(zip(_DOC_COLS, r)) for r in rows]
 
 
 def delete_document(doc_id: str) -> None:

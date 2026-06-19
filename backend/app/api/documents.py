@@ -1,8 +1,9 @@
 import asyncio
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Optional
 
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Query
 
 from ..core.ingestion import ingest_document, SUPPORTED_EXTENSIONS
 from ..core.vector_store import list_unique_documents, delete_document_chunks
@@ -21,7 +22,10 @@ _MAX_UPLOAD_BYTES = 100 * 1024 * 1024  # 100 MB
 # ── Upload (browser) ──────────────────────────────────────────────────────────
 
 @router.post("/upload", response_model=IngestResponse)
-async def upload_document(file: UploadFile = File(...)):
+async def upload_document(
+    file: UploadFile = File(...),
+    agent_tag: str = Form(default=""),
+):
     ext = Path(file.filename or "").suffix.lower()
     if ext not in SUPPORTED_EXTENSIONS:
         raise HTTPException(
@@ -39,7 +43,7 @@ async def upload_document(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="File exceeds 100 MB limit.")
 
     try:
-        result = await ingest_document(filename=file.filename, content=content)
+        result = await ingest_document(filename=file.filename, content=content, agent_tag=agent_tag)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
     except Exception as exc:
@@ -93,7 +97,7 @@ async def ingest_local_path(req: IngestPathRequest):
     for file_path in sorted(candidates):
         try:
             content = file_path.read_bytes()
-            result = await ingest_document(filename=file_path.name, content=content)
+            result = await ingest_document(filename=file_path.name, content=content, agent_tag=req.agent_tag)
             ingested.append(
                 IngestPathResult(
                     document_id=result["document_id"],
@@ -112,10 +116,10 @@ async def ingest_local_path(req: IngestPathRequest):
 # ── List ──────────────────────────────────────────────────────────────────────
 
 @router.get("", response_model=DocumentListResponse)
-async def list_documents():
+async def list_documents(agent_tag: Optional[str] = Query(default=None)):
     try:
-        db_docs = memory_service.list_documents()
-        if db_docs:
+        db_docs = memory_service.list_documents(agent_tag=agent_tag)
+        if db_docs or agent_tag is not None:
             metadata = [
                 DocumentMetadata(
                     id=d["doc_id"],
@@ -123,6 +127,7 @@ async def list_documents():
                     pages=d["pages"],
                     chunks=d["chunks"],
                     ingested_at=d["ingested_at"],
+                    agent_tag=d.get("agent_tag", ""),
                 )
                 for d in db_docs
             ]

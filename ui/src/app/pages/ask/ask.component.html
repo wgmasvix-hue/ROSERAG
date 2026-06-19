@@ -1,0 +1,166 @@
+<!-- Hero Section -->
+<section class="ds-hero" [class.ds-hero-compact]="showChat">
+  <div class="ds-hero-content">
+    <h1>{{ brand?.institution_name || 'ROSERAG' }}</h1>
+    <p class="ds-hero-tagline">{{ brand?.institution_tagline || 'Institutional Research Intelligence' }}</p>
+
+    <!-- Search Bar -->
+    <div class="ds-search-bar">
+      <textarea
+        #queryTextarea
+        class="ds-search-input"
+        [placeholder]="showChat ? 'Ask a follow-up question…' : 'Ask a research question about your documents…'"
+        [(ngModel)]="question"
+        (keydown)="onKeydown($event)"
+        (input)="autoResize($event)"
+        rows="1"
+        [disabled]="isLoading">
+      </textarea>
+      <button
+        class="ds-search-btn"
+        (click)="send()"
+        [disabled]="!question.trim() || isLoading">
+        <svg *ngIf="!isLoading" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+        <span *ngIf="isLoading" class="ds-btn-spinner"></span>
+      </button>
+    </div>
+
+    <!-- Quick-link chips -->
+    <div class="ds-hero-chips" *ngIf="!showChat">
+      <button
+        *ngFor="let ql of quickLinks"
+        class="ds-chip"
+        (click)="useQuickLink(ql)"
+        [disabled]="isLoading">
+        {{ ql.label }}
+      </button>
+    </div>
+
+    <!-- Clear chat -->
+    <div class="ds-hero-actions" *ngIf="showChat">
+      <button class="ds-chip ds-chip-clear" (click)="clearChat()">
+        &larr; New search
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- Chat Area -->
+<div class="ds-page" *ngIf="showChat">
+  <div class="ds-container">
+
+    <!-- Error -->
+    <div class="ds-alert ds-alert-error ds-mb-2" *ngIf="error">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+      {{ error }}
+    </div>
+
+    <div class="ds-chat">
+
+      <!-- Messages column -->
+      <div class="ds-messages-col">
+
+        <div class="ds-messages">
+          <div
+            *ngFor="let msg of messages"
+            class="ds-message"
+            [class.user]="msg.role === 'user'"
+            [class.assistant]="msg.role === 'assistant'">
+
+            <div class="ds-message-label">
+              {{ msg.role === 'user' ? 'You' : 'ROSERAG' }}
+            </div>
+
+            <div class="ds-message-bubble">
+              <div class="ds-answer-body">{{ msg.text }}</div>
+
+              <!-- Trust badge inline for assistant -->
+              <div class="ds-message-trust" *ngIf="msg.role === 'assistant' && msg.trust">
+                <span class="ds-badge trust-badge-{{ msg.trust.trust_level }}">
+                  {{ msg.trust.trust_level }} &mdash; {{ scorePercent(msg.trust.trust_score) }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Thinking animation -->
+          <div class="ds-message assistant" *ngIf="isLoading">
+            <div class="ds-message-label">ROSERAG</div>
+            <div class="ds-message-bubble">
+              <div class="ds-thinking">
+                <span></span><span></span><span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div #messagesEnd></div>
+      </div>
+
+      <!-- Evidence Sidebar -->
+      <aside class="ds-evidence" *ngIf="latestSources.length > 0 || latestTrust">
+
+        <!-- Trust Score Panel -->
+        <div class="ds-card ds-mb-2" *ngIf="latestTrust">
+          <div class="ds-card-header">
+            <h4>Evidence Quality</h4>
+            <span class="ds-badge trust-badge-{{ latestTrust.trust_level }}">
+              {{ latestTrust.trust_level }}
+            </span>
+          </div>
+          <div class="ds-card-body">
+            <div class="ds-trust-meter">
+              <div class="ds-trust-header">
+                <span class="ds-trust-label">Trust Score</span>
+                <strong>{{ scorePercent(latestTrust.trust_score) }}</strong>
+              </div>
+              <div class="ds-trust-bar-wrap">
+                <div
+                  class="ds-trust-bar {{ trustClass(latestTrust) }}"
+                  [style.width]="trustBarWidth(latestTrust.trust_score)">
+                </div>
+              </div>
+
+              <!-- Components breakdown -->
+              <div class="ds-trust-components" *ngIf="componentKeys(latestTrust.components).length">
+                <div
+                  class="ds-trust-comp-row"
+                  *ngFor="let key of componentKeys(latestTrust.components)">
+                  <span>{{ key | titlecase }}</span>
+                  <span>{{ scorePercent(latestTrust.components[key]) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Source Cards -->
+        <div class="ds-card" *ngIf="latestSources.length">
+          <div class="ds-card-header">
+            <h4>Sources</h4>
+            <span class="ds-badge ds-badge-secondary">{{ latestSources.length }}</span>
+          </div>
+          <div class="ds-card-body ds-source-list">
+            <div class="ds-source-card" *ngFor="let src of latestSources; let i = index">
+              <div class="ds-source-title">
+                <span class="ds-source-num">{{ i + 1 }}.</span>
+                {{ src.document }}
+              </div>
+              <div class="ds-source-chunk">{{ src.chunk }}</div>
+              <div class="ds-source-meta">
+                <span>Page {{ src.page }}</span>
+                <span class="ds-sep">·</span>
+                <span>Score {{ (src.score * 100).toFixed(0) }}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </aside>
+
+    </div><!-- end ds-chat -->
+  </div><!-- end ds-container -->
+</div><!-- end ds-page -->

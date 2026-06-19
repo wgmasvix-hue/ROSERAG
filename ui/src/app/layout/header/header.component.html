@@ -1,0 +1,77 @@
+<header class="ds-header">
+  <div class="ds-header-inner">
+
+    <!-- Brand Logo -->
+    <a class="ds-brand" routerLink="/ask" (click)="closeMobile()">
+      <span class="ds-brand-prefix">{{ brand?.brand_prefix || 'ROSE' }}</span><span
+        class="ds-brand-suffix">{{ brand?.brand_suffix || 'RAG' }}</span>
+    </a>
+
+    <!-- Desktop Nav -->
+    <nav class="ds-nav ds-hidden-mobile" aria-label="Main navigation">
+      <a
+        *ngFor="let link of navLinks"
+        class="ds-nav-link"
+        [routerLink]="link.path"
+        routerLinkActive="ds-nav-active"
+        [routerLinkActiveOptions]="{ exact: false }">
+        {{ link.label }}
+      </a>
+    </nav>
+
+    <!-- Right Side -->
+    <div class="ds-header-right">
+      <span
+        class="status-dot ds-hidden-mobile"
+        [class.online]="isOnline"
+        [class.offline]="!isOnline"
+        [attr.title]="isOnline ? 'API online' : 'API offline'">
+        {{ isOnline ? 'Online' : 'Offline' }}
+      </span>
+
+      <!-- Hamburger -->
+      <button
+        class="ds-hamburger ds-hidden-desktop"
+        (click)="toggleMobile()"
+        [attr.aria-expanded]="mobileOpen"
+        aria-label="Toggle navigation">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Mobile Nav Drawer -->
+  <nav
+    class="ds-mobile-nav"
+    [class.open]="mobileOpen"
+    aria-label="Mobile navigation">
+    <a
+      *ngFor="let link of navLinks"
+      class="ds-mobile-nav-link"
+      [routerLink]="link.path"
+      routerLinkActive="ds-nav-active"
+      [routerLinkActiveOptions]="{ exact: false }"
+      (click)="closeMobile()">
+      {{ link.label }}
+    </a>
+    <div class="ds-mobile-status">
+      <span
+        class="status-dot"
+        [class.online]="isOnline"
+        [class.offline]="!isOnline">
+        API {{ isOnline ? 'Online' : 'Offline' }}
+      </span>
+    </div>
+  </nav>
+</header>
+
+<!-- Mobile nav backdrop -->
+<div
+  class="ds-mobile-backdrop"
+  [class.open]="mobileOpen"
+  (click)="closeMobile()"
+  aria-hidden="true">
+</div>

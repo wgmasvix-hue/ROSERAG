@@ -1,0 +1,70 @@
+<div class="ds-page">
+  <div class="ds-container">
+
+    <nav class="ds-breadcrumb">
+      <a routerLink="/ask">Home</a>
+      <span class="ds-breadcrumb-sep">/</span>
+      <span class="ds-breadcrumb-current">Question History</span>
+    </nav>
+
+    <div class="ds-page-header">
+      <div>
+        <h1>Question History</h1>
+        <p>Recent questions answered by ROSERAG.</p>
+      </div>
+      <button class="ds-btn ds-btn-secondary ds-btn-sm" (click)="load()" [disabled]="isLoading">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        Refresh
+      </button>
+    </div>
+
+    <div class="ds-alert ds-alert-error ds-mb-2" *ngIf="error">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+      {{ error }}
+    </div>
+
+    <div class="ds-loading" *ngIf="isLoading">
+      <div class="ds-spinner"></div>
+      Loading history…
+    </div>
+
+    <div class="ds-history-list" *ngIf="!isLoading">
+
+      <div class="ds-history-entry" *ngFor="let entry of entries" [class.expanded]="isExpanded(entry.id)">
+        <button class="ds-history-header" (click)="toggle(entry.id)">
+          <div class="ds-history-q">{{ entry.question }}</div>
+          <div class="ds-history-meta">
+            <span class="ds-badge {{ trustClass(entry.trust_level) }}" *ngIf="entry.trust_level">
+              {{ entry.trust_level }} {{ scorePercent(entry.trust_score) }}
+            </span>
+            <span class="ds-history-date">{{ formatDate(entry.asked_at) }}</span>
+            <svg class="ds-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+        </button>
+
+        <div class="ds-history-body" *ngIf="isExpanded(entry.id)">
+          <div class="ds-history-answer">{{ entry.answer }}</div>
+
+          <div class="ds-history-sources" *ngIf="entry.sources?.length">
+            <div class="ds-history-sources-title">Sources ({{ entry.sources.length }})</div>
+            <div class="ds-source-chip" *ngFor="let s of entry.sources">
+              <span class="ds-source-chip-doc">{{ s.document }}</span>
+              <span class="ds-source-chip-page">p.{{ s.page }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ds-empty" *ngIf="!entries.length && !error">
+        <div class="ds-empty-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <h3>No questions yet</h3>
+        <p>Ask your first question in the <a routerLink="/ask">Ask</a> tab.</p>
+      </div>
+    </div>
+
+  </div>
+</div>

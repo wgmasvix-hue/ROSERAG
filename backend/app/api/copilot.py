@@ -27,7 +27,7 @@ async def copilot_query(request: CopilotRequest):
 
     try:
         query_vector = await embed_text(request.question)
-        chunks = search_chunks(query_vector, top_k=request.top_k)
+        chunks = search_chunks(query_vector, top_k=request.top_k, agent_tag_filter=agent_type.value)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Retrieval failed: {str(e)}")
 

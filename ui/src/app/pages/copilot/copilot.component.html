@@ -1,0 +1,179 @@
+<div class="ds-page">
+  <div class="ds-container">
+
+    <nav class="ds-breadcrumb">
+      <a routerLink="/ask">Home</a>
+      <span class="ds-breadcrumb-sep">/</span>
+      <span class="ds-breadcrumb-current">Institutional Copilots</span>
+    </nav>
+
+    <div class="ds-page-header">
+      <h1>Institutional Copilots</h1>
+      <p>Specialised AI agents with domain expertise and their own document knowledge bases.</p>
+    </div>
+
+    <!-- Agent selector -->
+    <div class="ds-agent-grid">
+      <button
+        *ngFor="let ag of agents"
+        class="ds-agent-card"
+        [class.active]="selectedAgent.id === ag.id"
+        [style.--agent-color]="ag.color"
+        (click)="selectAgent(ag)">
+        <span class="ds-agent-icon">{{ ag.icon }}</span>
+        <span class="ds-agent-label">{{ ag.label }}</span>
+        <span class="ds-agent-desc">{{ ag.description }}</span>
+      </button>
+    </div>
+
+    <!-- Active agent workspace -->
+    <div class="ds-copilot-workspace">
+
+      <div class="ds-copilot-main">
+
+        <!-- Ask panel -->
+        <div class="ds-card ds-mb-2">
+          <div class="ds-card-header">
+            <span class="ds-agent-icon-sm">{{ selectedAgent.icon }}</span>
+            <h3>{{ selectedAgent.label }} Agent</h3>
+          </div>
+          <div class="ds-card-body">
+            <textarea
+              class="ds-copilot-textarea"
+              [(ngModel)]="question"
+              (keydown)="onKeydown($event)"
+              [placeholder]="'Ask the ' + selectedAgent.label + ' agent…'"
+              rows="3"
+              [disabled]="isLoading">
+            </textarea>
+            <div class="ds-copilot-actions">
+              <button
+                class="ds-btn ds-btn-primary"
+                (click)="submit()"
+                [disabled]="!question.trim() || isLoading">
+                <span *ngIf="!isLoading">Ask {{ selectedAgent.label }}</span>
+                <span *ngIf="isLoading" class="ds-copilot-loading">
+                  <span class="ds-btn-spinner-sm"></span>
+                  Thinking…
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Error -->
+        <div class="ds-alert ds-alert-error ds-mb-2" *ngIf="error">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          {{ error }}
+        </div>
+
+        <!-- Result -->
+        <div class="ds-card" *ngIf="result">
+          <div class="ds-card-header">
+            <h4>Response</h4>
+            <span class="ds-badge trust-badge-{{ result.trust.trust_level }}">
+              {{ result.trust.trust_level }} &mdash; {{ scorePercent(result.trust.trust_score) }}
+            </span>
+          </div>
+          <div class="ds-card-body">
+            <div class="ds-answer-body">{{ result.answer }}</div>
+
+            <div class="ds-reasoning" *ngIf="result.reasoning_notes">
+              <div class="ds-reasoning-title">Reasoning</div>
+              <div class="ds-reasoning-body">{{ result.reasoning_notes }}</div>
+            </div>
+
+            <div class="ds-source-list-compact" *ngIf="result.sources?.length">
+              <div class="ds-sources-title">Sources ({{ result.sources.length }})</div>
+              <div class="ds-source-row" *ngFor="let src of result.sources; let i = index">
+                <span class="ds-source-num">{{ i + 1 }}</span>
+                <span class="ds-source-doc">{{ src.document }}</span>
+                <span class="ds-sep">·</span>
+                <span class="ds-source-page">p.{{ src.page }}</span>
+                <span class="ds-sep">·</span>
+                <span class="ds-source-score">{{ (src.score * 100).toFixed(0) }}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right sidebar: per-agent documents -->
+      <aside class="ds-copilot-sidebar">
+        <div class="ds-card">
+          <div class="ds-card-header">
+            <div class="ds-sidebar-title">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              {{ selectedAgent.label }} Docs
+            </div>
+            <span class="ds-badge ds-badge-secondary">{{ agentDocs.length }}</span>
+          </div>
+          <div class="ds-card-body ds-sidebar-body">
+
+            <!-- Upload alerts -->
+            <div class="ds-alert ds-alert-success ds-alert-sm" *ngIf="uploadMessage">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              {{ uploadMessage }}
+            </div>
+            <div class="ds-alert ds-alert-error ds-alert-sm" *ngIf="uploadError">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              {{ uploadError }}
+            </div>
+
+            <button
+              class="ds-btn ds-btn-primary ds-btn-sm ds-upload-btn"
+              (click)="triggerUpload()"
+              [disabled]="isUploading">
+              <svg *ngIf="!isUploading" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 5 5 12"/></svg>
+              <span *ngIf="isUploading" class="ds-upload-spinner"></span>
+              {{ isUploading ? 'Uploading…' : 'Add Document' }}
+            </button>
+            <input
+              #fileInput
+              type="file"
+              [accept]="ACCEPTED"
+              style="display:none"
+              (change)="onFileSelected($event)">
+
+            <p class="ds-sidebar-hint">Documents uploaded here are only used by the <strong>{{ selectedAgent.label }}</strong> agent. Global documents (uploaded from Browse) are also included.</p>
+
+            <!-- Doc list -->
+            <div class="ds-sidebar-loading" *ngIf="isLoadingDocs">
+              <div class="ds-spinner ds-spinner-sm"></div>
+            </div>
+
+            <div class="ds-sidebar-docs" *ngIf="!isLoadingDocs">
+              <div class="ds-sidebar-doc" *ngFor="let doc of agentDocs">
+                <div class="ds-sidebar-doc-name">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  {{ doc.filename }}
+                </div>
+                <div class="ds-sidebar-doc-meta">
+                  {{ doc.pages }}p · {{ doc.chunks }}c · {{ formatDate(doc.ingested_at) }}
+                </div>
+                <div class="ds-sidebar-doc-actions">
+                  <span *ngIf="deleteConfirmId !== doc.id">
+                    <button class="ds-link-btn ds-danger" (click)="confirmDelete(doc.id)">Remove</button>
+                  </span>
+                  <span class="ds-confirm-row" *ngIf="deleteConfirmId === doc.id">
+                    <span class="ds-confirm-text">Remove?</span>
+                    <button class="ds-link-btn ds-danger" (click)="deleteDoc(doc.id)" [disabled]="isDeleting">Yes</button>
+                    <button class="ds-link-btn" (click)="cancelDelete()" [disabled]="isDeleting">No</button>
+                  </span>
+                </div>
+              </div>
+
+              <div class="ds-sidebar-empty" *ngIf="!agentDocs.length">
+                No private documents yet.
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </aside>
+
+    </div>
+
+  </div>
+</div>
