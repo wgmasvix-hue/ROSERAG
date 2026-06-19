@@ -74,3 +74,42 @@ export interface CopilotResponse {
   trust: Trust;
   sources: Source[];
 }
+
+// ---- DSpace Bridge ----
+
+export interface BridgePaper {
+  id: string;
+  title: string;
+  authors: string[];
+  abstract: string;
+  year?: number;
+  doi?: string;
+  url: string;
+  pdf_url?: string;
+  source: string;
+  open_access: boolean;
+}
+
+export interface BridgeSearchResponse {
+  query: string;
+  results: BridgePaper[];
+  total: number;
+  sources_searched: string[];
+  errors: Record<string, string>;
+}
+
+export interface BridgeImportResponse {
+  paper_id: string;
+  document_id: string;
+  filename: string;
+  pages: number;
+  chunks: number;
+  message: string;
+}
+
+export interface BridgeSourceInfo {
+  id: string;
+  label: string;
+  enabled: boolean;
+  description: string;
+}

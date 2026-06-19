@@ -26,6 +26,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   readonly navLinks = [
     { path: '/ask',       label: 'Ask' },
     { path: '/browse',    label: 'Knowledge Base' },
+    { path: '/bridge',    label: 'Bridge' },
     { path: '/graph',     label: 'Graph' },
     { path: '/analytics', label: 'Analytics' },
     { path: '/history',   label: 'History' },

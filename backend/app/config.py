@@ -42,6 +42,10 @@ class Settings(BaseSettings):
     top_k: int = 5
     data_dir: str = "data"
 
+    # ── DSpace Bridge ────────────────────────────────────────────────
+    dspace_url: str = ""        # e.g. https://repo.myuniversity.edu
+    dspace_token: str = ""      # optional bearer token for auth
+
     model_config = {"env_file": ".env"}
 
 

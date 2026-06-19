@@ -8,7 +8,11 @@ import {
   GraphData,
   AnalyticsData,
   HistoryEntry,
-  CopilotResponse
+  CopilotResponse,
+  BridgePaper,
+  BridgeSearchResponse,
+  BridgeImportResponse,
+  BridgeSourceInfo,
 } from '../models/api.models';
 
 @Injectable({ providedIn: 'root' })
@@ -77,6 +81,24 @@ export class ApiService {
     return this.http.post<CopilotResponse>(`${this.base}/copilot/query`, {
       question,
       agent
+    });
+  }
+
+  getBridgeSources(): Observable<BridgeSourceInfo[]> {
+    return this.http.get<BridgeSourceInfo[]>(`${this.base}/bridge/sources`);
+  }
+
+  bridgeSearch(query: string, sources: string[], limit = 10): Observable<BridgeSearchResponse> {
+    return this.http.post<BridgeSearchResponse>(`${this.base}/bridge/search`, { query, sources, limit });
+  }
+
+  bridgeImport(paper: BridgePaper): Observable<BridgeImportResponse> {
+    return this.http.post<BridgeImportResponse>(`${this.base}/bridge/import`, {
+      paper_id: paper.id,
+      source: paper.source,
+      pdf_url: paper.pdf_url,
+      title: paper.title,
+      fallback_url: paper.url,
     });
   }
 }
