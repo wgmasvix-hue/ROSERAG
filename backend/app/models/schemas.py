@@ -223,3 +223,56 @@ class CopilotResponse(BaseModel):
     reasoning_notes: str
     trust: TrustResult
     sources: List[SourceWithChunkId]
+
+
+# ---- Phase 9: DSpace Bridge ----
+
+class BridgePaperSchema(BaseModel):
+    id: str
+    title: str
+    authors: List[str]
+    abstract: str
+    year: Optional[int] = None
+    doi: Optional[str] = None
+    url: str
+    pdf_url: Optional[str] = None
+    source: str
+    open_access: bool = False
+
+
+class BridgeSearchRequest(BaseModel):
+    query: str
+    sources: List[str] = ["arxiv", "openalex"]
+    limit: int = 10
+
+
+class BridgeSearchResponse(BaseModel):
+    query: str
+    results: List[BridgePaperSchema]
+    total: int
+    sources_searched: List[str]
+    errors: Dict[str, str] = {}
+
+
+class BridgeImportRequest(BaseModel):
+    paper_id: str
+    source: str
+    pdf_url: Optional[str] = None
+    title: str = ""
+    fallback_url: Optional[str] = None
+
+
+class BridgeImportResponse(BaseModel):
+    paper_id: str
+    document_id: str
+    filename: str
+    pages: int
+    chunks: int
+    message: str
+
+
+class BridgeSourceInfo(BaseModel):
+    id: str
+    label: str
+    enabled: bool
+    description: str

@@ -1,0 +1,202 @@
+<div class="ds-page">
+  <div class="ds-container">
+
+    <!-- Breadcrumb -->
+    <nav class="ds-breadcrumb" aria-label="Breadcrumb">
+      <a routerLink="/ask">Home</a>
+      <span class="ds-breadcrumb-sep" aria-hidden="true">/</span>
+      <span class="ds-breadcrumb-current">Research Bridge</span>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="ds-page-header">
+      <h1>Research Bridge</h1>
+      <p>Discover and import papers from arXiv, OpenAlex, Semantic Scholar, and your institutional repository</p>
+    </div>
+
+    <!-- Source Selector -->
+    <div class="bridge-sources" role="group" aria-label="Select sources">
+      <span class="bridge-sources-label">Search in:</span>
+      <div class="bridge-source-chips">
+        <button
+          *ngFor="let source of sources"
+          class="bridge-source-chip"
+          [class.selected]="isSourceSelected(source.id)"
+          [class.disabled]="!source.enabled"
+          [attr.aria-pressed]="isSourceSelected(source.id)"
+          [attr.title]="!source.enabled ? source.label + ' not configured' : source.desc"
+          [disabled]="!source.enabled"
+          (click)="toggleSource(source.id)">
+          <span class="bridge-source-icon" aria-hidden="true">{{ source.icon }}</span>
+          <span class="bridge-source-label">{{ source.label }}</span>
+          <span *ngIf="!source.enabled" class="bridge-source-unavailable">not configured</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="bridge-search-wrap">
+      <div class="ds-search-bar bridge-search-bar">
+        <input
+          type="text"
+          [(ngModel)]="query"
+          (keydown)="onKeydown($event)"
+          placeholder="Search for papers, authors, topics..."
+          aria-label="Search query"
+          [disabled]="isLoading" />
+        <button
+          (click)="search()"
+          [disabled]="isLoading || !query.trim() || selectedSources.size === 0"
+          aria-label="Search">
+          <span *ngIf="!isLoading">Search</span>
+          <span *ngIf="isLoading" class="bridge-btn-spinner" aria-hidden="true"></span>
+          <span *ngIf="isLoading" class="sr-only">Searching...</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Global Error -->
+    <div *ngIf="error" class="ds-alert ds-alert-error" role="alert">
+      <span>⚠</span>
+      <span>{{ error }}</span>
+    </div>
+
+    <!-- Source-level Errors (partial failures) -->
+    <div *ngIf="sourceErrorEntries.length > 0 && results.length > 0" class="ds-alert ds-alert-warning" role="status">
+      <span>⚠</span>
+      <span>
+        Some sources had errors:
+        <span *ngFor="let e of sourceErrorEntries; let last = last">
+          <strong>{{ e.key }}</strong> ({{ e.value }})<span *ngIf="!last">, </span>
+        </span>
+      </span>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="isLoading" class="ds-loading" aria-live="polite">
+      <div class="ds-spinner" aria-hidden="true"></div>
+      <span>Searching across selected sources...</span>
+    </div>
+
+    <!-- Results -->
+    <div *ngIf="!isLoading && results.length > 0" class="bridge-results">
+      <div class="bridge-results-header">
+        <span class="bridge-results-count">{{ results.length }} paper{{ results.length !== 1 ? 's' : '' }} found</span>
+      </div>
+
+      <div
+        *ngFor="let paper of results; trackBy: trackByPaperId"
+        class="ds-card bridge-result-card">
+
+        <div class="bridge-result-header">
+          <!-- Source badge -->
+          <span class="bridge-source-badge" [class]="'source-' + paper.source">
+            {{ paper.source === 'semantic_scholar' ? 'Semantic Scholar' : paper.source === 'openalex' ? 'OpenAlex' : paper.source === 'dspace' ? 'DSpace' : 'arXiv' }}
+          </span>
+
+          <!-- Open Access badge -->
+          <span *ngIf="paper.open_access" class="ds-badge ds-badge-high bridge-oa-badge">
+            Open Access
+          </span>
+
+          <!-- Year -->
+          <span *ngIf="paper.year" class="bridge-year ds-text-muted">{{ paper.year }}</span>
+
+          <!-- DOI -->
+          <a
+            *ngIf="paper.doi"
+            [href]="'https://doi.org/' + paper.doi"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="bridge-doi-chip ds-badge ds-badge-secondary">
+            DOI: {{ paper.doi }}
+          </a>
+        </div>
+
+        <div class="bridge-result-body">
+          <!-- Title -->
+          <h3 class="bridge-result-title">
+            <a [href]="paper.url" target="_blank" rel="noopener noreferrer">
+              {{ paper.title }}
+            </a>
+          </h3>
+
+          <!-- Authors -->
+          <p class="bridge-result-authors">
+            {{ formatAuthors(paper.authors) }}
+          </p>
+
+          <!-- Abstract -->
+          <div
+            *ngIf="paper.abstract"
+            class="bridge-result-abstract"
+            [class.expanded]="isAbstractExpanded(paper.id)">
+            <p>{{ paper.abstract }}</p>
+          </div>
+          <button
+            *ngIf="paper.abstract && paper.abstract.length > 200"
+            class="bridge-expand-btn"
+            (click)="toggleAbstract(paper.id)"
+            [attr.aria-expanded]="isAbstractExpanded(paper.id)">
+            {{ isAbstractExpanded(paper.id) ? 'Show less' : 'Show more' }}
+          </button>
+
+          <!-- Import error -->
+          <div *ngIf="importErrors[paper.id]" class="ds-alert ds-alert-error bridge-import-error" role="alert">
+            {{ importErrors[paper.id] }}
+          </div>
+        </div>
+
+        <div class="bridge-result-footer">
+          <!-- Import button -->
+          <button
+            *ngIf="paper.pdf_url && !importedIds.has(paper.id)"
+            class="ds-btn ds-btn-primary ds-btn-sm bridge-import-btn"
+            [disabled]="importingIds.has(paper.id)"
+            (click)="importPaper(paper)">
+            <span *ngIf="importingIds.has(paper.id)" class="ds-spinner bridge-spinner-sm" aria-hidden="true"></span>
+            <span *ngIf="importingIds.has(paper.id)">Importing...</span>
+            <span *ngIf="!importingIds.has(paper.id)">Import to ROSERAG</span>
+          </button>
+
+          <button
+            *ngIf="paper.pdf_url && importedIds.has(paper.id)"
+            class="ds-btn ds-btn-sm bridge-imported-btn"
+            disabled>
+            ✓ Imported
+          </button>
+
+          <span
+            *ngIf="!paper.pdf_url"
+            class="bridge-no-pdf ds-text-muted">
+            No PDF available
+          </span>
+
+          <a
+            [href]="paper.url"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="ds-btn ds-btn-secondary ds-btn-sm">
+            View paper
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Empty state (after search) -->
+    <div *ngIf="!isLoading && hasSearched && results.length === 0 && !error" class="ds-empty">
+      <div class="ds-empty-icon" aria-hidden="true">🔍</div>
+      <h3>No papers found</h3>
+      <p>Try different keywords or select additional sources</p>
+    </div>
+
+    <!-- Initial empty state (before any search) -->
+    <div *ngIf="!isLoading && !hasSearched" class="ds-empty bridge-initial-empty">
+      <div class="ds-empty-icon" aria-hidden="true">🌐</div>
+      <h3>Search across international repositories</h3>
+      <p>Enter a query to discover papers from arXiv, OpenAlex, Semantic Scholar, and your local DSpace</p>
+    </div>
+
+  </div>
+</div>

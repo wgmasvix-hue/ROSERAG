@@ -37,6 +37,11 @@ export const routes: Routes = [
       import('./pages/copilot/copilot.component').then(m => m.CopilotComponent)
   },
   {
+    path: 'bridge',
+    loadComponent: () =>
+      import('./pages/bridge/bridge.component').then(m => m.BridgeComponent)
+  },
+  {
     path: '**',
     redirectTo: 'ask'
   }
