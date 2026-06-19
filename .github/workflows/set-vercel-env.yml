@@ -1,0 +1,92 @@
+name: Set Vercel Environment Variables
+
+on:
+  workflow_dispatch:
+    inputs:
+      vercel_token:
+        description: 'Vercel token'
+        required: true
+      deepseek_key:
+        description: 'DeepSeek API key'
+        required: true
+      jina_key:
+        description: 'Jina AI API key (leave blank to skip)'
+        required: false
+        default: ''
+      qdrant_host:
+        description: 'Qdrant host'
+        required: false
+        default: 'localhost'
+      qdrant_api_key:
+        description: 'Qdrant API key (cloud only)'
+        required: false
+        default: ''
+
+jobs:
+  set-env:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Find Vercel project
+        id: project
+        run: |
+          PROJECT=$(curl -s "https://api.vercel.com/v9/projects" \
+            -H "Authorization: Bearer ${{ github.event.inputs.vercel_token }}" \
+            | jq -r '.projects[] | select(.name | ascii_downcase | contains("roserag")) | .id' | head -1)
+          echo "project_id=$PROJECT" >> $GITHUB_OUTPUT
+          echo "Found project: $PROJECT"
+
+      - name: Set environment variables
+        run: |
+          TOKEN="${{ github.event.inputs.vercel_token }}"
+          PROJECT="${{ steps.project.outputs.project_id }}"
+          BASE="https://api.vercel.com/v10/projects/${PROJECT}/env"
+
+          set_env() {
+            local KEY=$1 VAL=$2
+            # Delete existing first (ignore errors)
+            EXISTING=$(curl -s "${BASE}" -H "Authorization: Bearer ${TOKEN}" \
+              | jq -r ".envs[] | select(.key==\"${KEY}\") | .id" | head -1)
+            [ -n "$EXISTING" ] && curl -s -X DELETE "${BASE}/${EXISTING}" \
+              -H "Authorization: Bearer ${TOKEN}" > /dev/null
+            # Create new
+            curl -s -X POST "${BASE}" \
+              -H "Authorization: Bearer ${TOKEN}" \
+              -H "Content-Type: application/json" \
+              -d "{\"key\":\"${KEY}\",\"value\":\"${VAL}\",\"type\":\"encrypted\",\"target\":[\"production\",\"preview\",\"development\"]}" \
+              | jq -r '.key + " => " + .value[:4] + "..."'
+          }
+
+          set_env LLM_PROVIDER            openai
+          set_env LLM_API_KEY             "${{ github.event.inputs.deepseek_key }}"
+          set_env LLM_API_BASE            https://api.deepseek.com
+          set_env CHAT_MODEL              deepseek-chat
+          set_env REASONER_MODEL          deepseek-reasoner
+          set_env EMBED_API_BASE          https://api.jina.ai
+          set_env EMBED_MODEL             jina-embeddings-v5-omni-nano
+
+          if [ -n "${{ github.event.inputs.jina_key }}" ]; then
+            set_env EMBED_API_KEY "${{ github.event.inputs.jina_key }}"
+          fi
+
+          QHOST="${{ github.event.inputs.qdrant_host }}"
+          QKEY="${{ github.event.inputs.qdrant_api_key }}"
+          set_env QDRANT_HOST       "${QHOST}"
+          set_env QDRANT_PORT       6333
+          set_env QDRANT_USE_HTTPS  "$([ "${QHOST}" != 'localhost' ] && echo true || echo false)"
+          [ -n "${QKEY}" ] && set_env QDRANT_API_KEY "${QKEY}"
+
+          set_env COLLECTION_NAME   roserag
+          set_env CHUNK_SIZE        1000
+          set_env CHUNK_OVERLAP     200
+          set_env TOP_K             5
+          set_env DATA_DIR          /tmp/roserag
+
+          echo "Done. Redeploy Vercel to pick up changes."
+
+      - name: Trigger redeploy
+        run: |
+          curl -s -X POST "https://api.vercel.com/v13/deployments" \
+            -H "Authorization: Bearer ${{ github.event.inputs.vercel_token }}" \
+            -H "Content-Type: application/json" \
+            -d '{"name":"roserag","gitSource":{"type":"github","repoId":"wgmasvix-hue/roserag","ref":"main"}}' \
+            | jq -r '"Deployment: " + .url' || true
