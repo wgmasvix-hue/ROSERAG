@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     # Embeddings — pre-configured for Jina AI; override with EMBED_* env vars
     embed_api_key: str = ""
     embed_api_base: str = "https://api.jina.ai"
-    embed_model: str = "jina-embeddings-v2-base-en"
+    embed_model: str = "jina-embeddings-v5-omni-nano"
 
     # ── Qdrant ───────────────────────────────────────────────────────
     qdrant_host: str = "localhost"

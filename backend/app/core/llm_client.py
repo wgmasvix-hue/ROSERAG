@@ -80,18 +80,24 @@ async def chat_complete(messages: List[Dict[str, str]], timeout: float = 120.0) 
     return data["message"]["content"]
 
 
-async def get_embedding(text: str, timeout: float = 60.0) -> List[float]:
+def _is_jina_v5() -> bool:
+    return "jina-embeddings-v5" in settings.embed_model
+
+
+async def get_embedding(
+    text: str, timeout: float = 60.0, task: str = "retrieval.query"
+) -> List[float]:
     """Return the embedding vector for a single text string."""
     _check_config("Embeddings", need_embed=True)
     url = _embed_url()
 
     async with httpx.AsyncClient(timeout=timeout) as client:
         if settings.llm_provider == "openai":
-            r = await client.post(
-                url,
-                json={"model": _embed_model(), "input": text},
-                headers=_embed_headers(),
-            )
+            payload: Dict = {"model": _embed_model(), "input": text}
+            # Jina v5 supports task hints for improved retrieval accuracy
+            if _is_jina_v5():
+                payload["task"] = task
+            r = await client.post(url, json=payload, headers=_embed_headers())
             r.raise_for_status()
             return r.json()["data"][0]["embedding"]
         else:

@@ -84,7 +84,7 @@ def cmd_init(_args) -> None:
             "CHAT_MODEL=deepseek-chat",
             f"EMBED_API_KEY={embed_key}",
             "EMBED_API_BASE=https://api.jina.ai",
-            "EMBED_MODEL=jina-embeddings-v2-base-en",
+            "EMBED_MODEL=jina-embeddings-v5-omni-nano",
         ]
     elif choice == "3":
         llm_key = _ask("OpenAI API key (sk-...)")
