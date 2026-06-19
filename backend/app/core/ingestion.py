@@ -6,8 +6,6 @@ from html.parser import HTMLParser
 from pathlib import Path
 from typing import Dict, Any
 
-import fitz  # PyMuPDF
-
 from .chunking import chunk_document_pages
 from .embeddings import embed_batch
 from .vector_store import ensure_collection, upsert_chunks
@@ -23,6 +21,10 @@ _TEXT_PAGE_SIZE = 3000
 # ── Per-format extractors ─────────────────────────────────────────────────────
 
 def _pages_pdf(content: bytes) -> list[Dict[str, Any]]:
+    try:
+        import fitz  # PyMuPDF
+    except ImportError:
+        raise ValueError("PyMuPDF is required for PDF files. Install with: pip install pymupdf")
     doc = fitz.open(stream=content, filetype="pdf")
     pages = []
     for i, page in enumerate(doc):
