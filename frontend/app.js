@@ -55,6 +55,7 @@ function onViewActivated(view) {
   if (view === "analytics") loadAnalytics();
   if (view === "history")   loadHistory();
   if (view === "graph")     loadGraph();
+  if (view === "drive")     initDrive();
 }
 
 // ══ Health ═══════════════════════════════════════════════════
@@ -575,6 +576,169 @@ async function applyBranding() {
     document.title = `${cfg.brand_prefix}${cfg.brand_suffix} — ${cfg.institution_name}`;
   } catch {
     // Branding fetch failed — defaults remain in place
+  }
+}
+
+// ══ Google Drive ══════════════════════════════════════════════
+
+let driveConnected = false;
+let driveFolderStack = [{ id: "root", name: "My Drive" }];
+const driveSelected = new Set();
+
+async function initDrive() {
+  try {
+    const res = await fetch(`${API}/api/drive/status`);
+    const data = await res.json();
+    driveConnected = data.connected;
+  } catch { driveConnected = false; }
+
+  // Check for ?drive=connected redirect from OAuth
+  if (location.search.includes("drive=connected")) {
+    driveConnected = true;
+    history.replaceState({}, "", location.pathname);
+  }
+
+  if (driveConnected) {
+    $("drive-connect-state").classList.add("hidden");
+    $("drive-browser-state").classList.remove("hidden");
+    loadDriveFolder("root");
+  } else {
+    $("drive-connect-state").classList.remove("hidden");
+    $("drive-browser-state").classList.add("hidden");
+  }
+}
+
+async function loadDriveFolder(folderId) {
+  driveSelected.clear();
+  updateDriveSyncBar();
+  $("drive-loading").classList.remove("hidden");
+  $("drive-file-list").innerHTML = "";
+
+  try {
+    const [foldersRes, filesRes] = await Promise.all([
+      fetch(`${API}/api/drive/folders?folder_id=${folderId}`),
+      fetch(`${API}/api/drive/files?folder_id=${folderId}`),
+    ]);
+    const folders = (await foldersRes.json()).files || [];
+    const files   = (await filesRes.json()).files   || [];
+    renderDriveItems(folders, files);
+  } catch {
+    $("drive-file-list").innerHTML = `<div class="loading-state">Failed to load Drive files.</div>`;
+  } finally {
+    $("drive-loading").classList.add("hidden");
+  }
+
+  // Breadcrumb
+  $("drive-breadcrumb").textContent = driveFolderStack.map(f => f.name).join(" › ");
+  $("drive-back").disabled = driveFolderStack.length <= 1;
+}
+
+function renderDriveItems(folders, files) {
+  const list = $("drive-file-list");
+  if (!folders.length && !files.length) {
+    list.innerHTML = `<div class="loading-state">This folder is empty.</div>`;
+    return;
+  }
+
+  const folderHtml = folders.map(f => `
+    <div class="drive-item drive-folder" data-id="${f.id}" data-name="${escHtml(f.name)}">
+      <span class="drive-item-icon">📁</span>
+      <span class="drive-item-name">${escHtml(f.name)}</span>
+    </div>
+  `).join("");
+
+  const fileHtml = files.map(f => {
+    const ext  = f.name.split(".").pop().toUpperCase();
+    const size = f.size ? `${Math.round(f.size / 1024)} KB` : "";
+    const date = f.modifiedTime ? fmtDate(f.modifiedTime) : "";
+    return `
+      <div class="drive-item drive-file" data-id="${f.id}">
+        <input type="checkbox" class="drive-checkbox" data-id="${f.id}" />
+        <span class="drive-item-icon">📄</span>
+        <span class="drive-item-name">${escHtml(f.name)}</span>
+        <span class="drive-item-meta">${size} ${date}</span>
+      </div>
+    `;
+  }).join("");
+
+  list.innerHTML = folderHtml + fileHtml;
+
+  list.querySelectorAll(".drive-folder").forEach(el => {
+    el.addEventListener("click", () => {
+      driveFolderStack.push({ id: el.dataset.id, name: el.dataset.name });
+      loadDriveFolder(el.dataset.id);
+    });
+  });
+
+  list.querySelectorAll(".drive-checkbox").forEach(cb => {
+    cb.addEventListener("change", () => {
+      if (cb.checked) driveSelected.add(cb.dataset.id);
+      else driveSelected.delete(cb.dataset.id);
+      updateDriveSyncBar();
+    });
+  });
+}
+
+function updateDriveSyncBar() {
+  const n = driveSelected.size;
+  $("drive-selected-count").textContent = `${n} file${n !== 1 ? "s" : ""} selected`;
+  $("drive-sync-btn").disabled = n === 0;
+}
+
+$("drive-back").addEventListener("click", () => {
+  if (driveFolderStack.length > 1) {
+    driveFolderStack.pop();
+    loadDriveFolder(driveFolderStack[driveFolderStack.length - 1].id);
+  }
+});
+
+$("drive-sync-btn").addEventListener("click", async () => {
+  const ids = [...driveSelected];
+  if (!ids.length) return;
+
+  const btn = $("drive-sync-btn");
+  btn.disabled = true;
+  btn.textContent = "Ingesting…";
+  showDriveSyncStatus(`Ingesting ${ids.length} file(s)…`, "");
+
+  try {
+    const res  = await fetch(`${API}/api/drive/sync`, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ file_ids: ids, agent_tag: "drive" }),
+    });
+    const data = await res.json();
+    const ok   = data.synced?.length || 0;
+    const bad  = data.errors?.length || 0;
+    showDriveSyncStatus(
+      `✓ ${ok} ingested${bad ? ` · ${bad} failed` : ""}`,
+      ok > 0 ? "success" : "error"
+    );
+    driveSelected.clear();
+    updateDriveSyncBar();
+    loadDriveFolder(driveFolderStack[driveFolderStack.length - 1].id);
+  } catch {
+    showDriveSyncStatus("Sync failed — network error.", "error");
+  }
+
+  btn.textContent = "Ingest Selected";
+  btn.disabled = false;
+});
+
+$("drive-disconnect").addEventListener("click", async () => {
+  await fetch(`${API}/api/drive/disconnect`);
+  driveConnected = false;
+  $("drive-connect-state").classList.remove("hidden");
+  $("drive-browser-state").classList.add("hidden");
+});
+
+function showDriveSyncStatus(msg, type) {
+  const el = $("drive-sync-status");
+  el.textContent = msg;
+  el.className = `upload-status ${type}`;
+  clearTimeout(el._t);
+  if (type === "success" || type === "error") {
+    el._t = setTimeout(() => el.classList.add("hidden"), 6000);
   }
 }
 

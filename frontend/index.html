@@ -55,6 +55,10 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         Copilot
       </button>
+      <button class="nav-item" data-view="drive">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12H2M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6L18.55 5.11A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>
+        Google Drive
+      </button>
     </div>
 
     <div class="nav-footer">
@@ -220,6 +224,53 @@
       </div>
     </div>
 
+    <!-- VIEW: Google Drive -->
+    <div class="view" id="view-drive">
+      <div class="view-header">
+        <h1>Google Drive</h1>
+        <p>Browse and ingest documents directly from your Google Drive</p>
+      </div>
+      <div class="view-body">
+
+        <!-- Not connected state -->
+        <div id="drive-connect-state">
+          <div class="drive-connect-card">
+            <div class="drive-icon">
+              <svg width="48" height="48" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3L27.5 53H0c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+                <path d="M43.65 25L29.9 1.2C28.55.4 27 0 25.45 0 23.9 0 22.35.4 21 1.2L6.6 26.5l13.75 23.8H43.65z" fill="#00ac47"/>
+                <path d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.2c.8-1.4 1.2-2.95 1.2-4.5H59.8l5.65 9.5z" fill="#ea4335"/>
+                <path d="M43.65 25L57.4 1.2C56.05.4 54.5 0 52.95 0H34.35c-1.55 0-3.1.4-4.45 1.2z" fill="#00832d"/>
+                <path d="M59.8 53H20.35L6.6 76.8c1.35.8 2.9 1.2 4.45 1.2h62.2c1.55 0 3.1-.4 4.45-1.2z" fill="#2684fc"/>
+                <path d="M73.4 26.5L59.65 3c-1.35-.8-2.9-1.2-4.45-1.2h-.25L43.65 25 59.8 53h26.95L73.4 26.5z" fill="#ffba00"/>
+              </svg>
+            </div>
+            <h2>Connect Google Drive</h2>
+            <p>Grant read-only access to browse and ingest your Drive documents into the knowledge base.</p>
+            <a href="/api/drive/auth" class="btn-drive-connect">Connect Google Drive</a>
+            <p class="drive-note">Requires GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to be set in Vercel environment variables.</p>
+          </div>
+        </div>
+
+        <!-- Connected state -->
+        <div id="drive-browser-state" class="hidden">
+          <div class="drive-toolbar">
+            <button class="btn-secondary" id="drive-back" disabled>← Back</button>
+            <span id="drive-breadcrumb" class="drive-breadcrumb">My Drive</span>
+            <button class="btn-secondary" id="drive-disconnect" style="margin-left:auto;color:#991b1b">Disconnect</button>
+          </div>
+          <div id="drive-loading" class="loading-state hidden">Loading…</div>
+          <div id="drive-file-list" class="drive-file-list"></div>
+          <div class="drive-sync-bar" id="drive-sync-bar">
+            <span id="drive-selected-count">0 files selected</span>
+            <button class="btn-primary" id="drive-sync-btn" disabled>Ingest Selected</button>
+          </div>
+          <div id="drive-sync-status" class="upload-status hidden"></div>
+        </div>
+
+      </div>
+    </div>
+
   </main>
 
   <!-- ═══════════ RIGHT PANEL (Evidence) ═══════════ -->
@@ -276,6 +327,10 @@
     <button class="bn-tab" data-view="copilot">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
       <span>Agents</span>
+    </button>
+    <button class="bn-tab" data-view="drive">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12H2M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6L18.55 5.11A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>
+      <span>Drive</span>
     </button>
   </nav>
 

@@ -53,6 +53,13 @@ def init_db() -> None:
             asked_at        TEXT NOT NULL
         )
     """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS drive_tokens (
+            id         INTEGER PRIMARY KEY,
+            token_json TEXT    NOT NULL,
+            updated_at TEXT    NOT NULL DEFAULT (datetime('now'))
+        )
+    """)
     conn.commit()
     conn.close()
 
@@ -183,3 +190,20 @@ def count_questions() -> int:
     count = conn.execute("SELECT COUNT(*) FROM questions").fetchone()[0]
     conn.close()
     return count
+
+
+def save_drive_token(token_data: dict) -> None:
+    with sqlite3.connect(_db_path()) as conn:
+        conn.execute("DELETE FROM drive_tokens")
+        conn.execute("INSERT INTO drive_tokens (token_json) VALUES (?)", [json.dumps(token_data)])
+
+
+def get_drive_token() -> Optional[dict]:
+    with sqlite3.connect(_db_path()) as conn:
+        row = conn.execute("SELECT token_json FROM drive_tokens LIMIT 1").fetchone()
+    return json.loads(row[0]) if row else None
+
+
+def delete_drive_token() -> None:
+    with sqlite3.connect(_db_path()) as conn:
+        conn.execute("DELETE FROM drive_tokens")

@@ -48,6 +48,11 @@ class Settings(BaseSettings):
     dspace_url: str = ""        # e.g. https://repo.myuniversity.edu
     dspace_token: str = ""      # optional bearer token for auth
 
+    # ── Google Drive OAuth ────────────────────────────────────────
+    google_client_id:     str = ""
+    google_client_secret: str = ""
+    app_url:              str = ""   # e.g. https://roserag-vje7.vercel.app
+
     model_config = {"env_file": ".env"}
 
 
