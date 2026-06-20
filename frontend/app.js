@@ -1,10 +1,12 @@
 /* ═══════════════════════════════════════════════════════════════
-   ROSERAG v2.0 — Institutional Intelligence Platform
+   ROSERAG v3.0 — Institutional Intelligence Platform
    ════════════════════════════════════════════════════════════ */
 
 const API = "";
 const chatHistory = [];
 let currentAgent = "research";
+let driveSelectedFiles = new Set();
+let driveFolderStack = [{ id: "root", name: "My Drive" }];
 
 // ── DOM refs ──────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
@@ -12,24 +14,32 @@ const $ = id => document.getElementById(id);
 // ── Viewport height fix (iOS keyboard shrinks window) ─────────
 function setVh() {
   const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-  document.documentElement.style.setProperty('--real-vh', `${h * 0.01}px`);
+  document.documentElement.style.setProperty("--real-vh", `${h * 0.01}px`);
 }
 if (window.visualViewport) {
-  window.visualViewport.addEventListener('resize', setVh);
+  window.visualViewport.addEventListener("resize", setVh);
 } else {
-  window.addEventListener('resize', setVh);
+  window.addEventListener("resize", setVh);
 }
 setVh();
 
-const statusDot    = $("status-dot");
-const statusLabel  = $("status-label");
-const chatMessages = $("chat-messages");
-const chatInput    = $("chat-input");
-const sendBtn      = $("send-btn");
-const fileInput    = $("file-input");
-const uploadStatus = $("upload-status");
+// ── Configure marked.js ───────────────────────────────────────
+if (typeof marked !== "undefined") {
+  marked.setOptions({ gfm: true, breaks: true });
+}
+
+const chatMessages  = $("chat-messages");
+const chatInput     = $("chat-input");
+const sendBtn       = $("send-btn");
+const fileInput     = $("file-input");
+const uploadStatus  = $("upload-status");
 const rpPlaceholder = $("rp-placeholder");
-const rpContent    = $("rp-content");
+const rpContent     = $("rp-content");
+
+// SVG icons for send / stop
+const ICON_SEND = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`;
+const ICON_STOP = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>`;
+let streamAbortController = null;
 
 // ══ Navigation ════════════════════════════════════════════════
 function switchView(view) {
@@ -42,13 +52,12 @@ function switchView(view) {
   onViewActivated(view);
 }
 
-document.querySelectorAll(".nav-item").forEach(btn => {
-  btn.addEventListener("click", () => switchView(btn.dataset.view));
-});
-
-document.querySelectorAll(".bn-tab").forEach(btn => {
-  btn.addEventListener("click", () => switchView(btn.dataset.view));
-});
+document.querySelectorAll(".nav-item").forEach(btn =>
+  btn.addEventListener("click", () => switchView(btn.dataset.view))
+);
+document.querySelectorAll(".bn-tab").forEach(btn =>
+  btn.addEventListener("click", () => switchView(btn.dataset.view))
+);
 
 function onViewActivated(view) {
   if (view === "documents") loadDocuments();
@@ -60,31 +69,74 @@ function onViewActivated(view) {
 
 // ══ Health ═══════════════════════════════════════════════════
 async function checkHealth() {
-  const online = (() => {
-    try {
-      return fetch(`${API}/api/health`).then(r => r.ok);
-    } catch { return Promise.resolve(false); }
-  })();
-
-  online.then(ok => {
+  try {
+    const ok = await fetch(`${API}/api/health`).then(r => r.ok);
     const cls = ok ? "status-dot online" : "status-dot offline";
     document.querySelectorAll(".status-dot").forEach(d => d.className = cls);
-    if (statusLabel) statusLabel.textContent = ok ? "System online" : "Offline";
-    const mLabel = $("status-label-m");
-    if (mLabel) mLabel.textContent = ok ? "Online" : "Offline";
+    const sl = $("status-label"), slm = $("status-label-m");
+    if (sl)  sl.textContent  = ok ? "System online" : "Offline";
+    if (slm) slm.textContent = ok ? "Online" : "Offline";
+  } catch {
+    document.querySelectorAll(".status-dot").forEach(d => d.className = "status-dot offline");
+  }
+}
+
+// ══ Toast notifications ═══════════════════════════════════════
+function toast(msg, type = "info", duration = 4000) {
+  const container = $("toast-container");
+  if (!container) return;
+  const t = document.createElement("div");
+  t.className = `toast toast-${type}`;
+  t.textContent = msg;
+  container.appendChild(t);
+  requestAnimationFrame(() => requestAnimationFrame(() => t.classList.add("toast-visible")));
+  setTimeout(() => {
+    t.classList.remove("toast-visible");
+    setTimeout(() => t.remove(), 350);
+  }, duration);
+}
+
+// ══ Markdown rendering ════════════════════════════════════════
+function renderMarkdown(text) {
+  if (!text) return "";
+  if (typeof marked === "undefined") return formatText(text);
+  // Pre-process citation markers before markdown so they survive parsing
+  const withCites = String(text).replace(/\[(\d+)\]/g,
+    (_, n) => `CITEREF${n}ENDCITE`
+  );
+  let html = marked.parse(withCites);
+  // Post-process: restore citation markers as clickable links
+  html = html.replace(/CITEREF(\d+)ENDCITE/g,
+    '<a href="#" class="cite-ref" data-n="$1" title="View source $1">[$1]</a>'
+  );
+  return html;
+}
+
+// Citation click delegation
+chatMessages.addEventListener("click", e => {
+  const ref = e.target.closest(".cite-ref");
+  if (!ref) return;
+  e.preventDefault();
+  const n = parseInt(ref.dataset.n, 10);
+  highlightSource(n);
+  openRightPanel();
+});
+
+function highlightSource(n) {
+  document.querySelectorAll(".source-card").forEach((card, i) => {
+    card.classList.toggle("source-highlight", i + 1 === n);
+    if (i + 1 === n) card.scrollIntoView({ behavior: "smooth", block: "nearest" });
   });
 }
 
-// ══ Ask / Chat ════════════════════════════════════════════════
+// ══ Ask / Chat (SSE Streaming) ════════════════════════════════
 chatInput.addEventListener("keydown", e => {
   if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChat(); }
 });
-
 chatInput.addEventListener("input", () => {
   chatInput.style.height = "auto";
   chatInput.style.height = Math.min(chatInput.scrollHeight, 140) + "px";
 });
-
 sendBtn.addEventListener("click", sendChat);
 
 document.querySelectorAll(".hint-chip").forEach(chip => {
@@ -96,6 +148,12 @@ document.querySelectorAll(".hint-chip").forEach(chip => {
 });
 
 async function sendChat() {
+  // If already streaming, abort
+  if (streamAbortController) {
+    streamAbortController.abort();
+    return;
+  }
+
   const text = chatInput.value.trim();
   if (!text) return;
 
@@ -106,80 +164,130 @@ async function sendChat() {
   chatHistory.push({ role: "user", content: text });
   chatInput.value = "";
   chatInput.style.height = "auto";
-  sendBtn.disabled = true;
 
-  const thinkEl = appendThinking();
+  // Switch to stop button
+  sendBtn.innerHTML = ICON_STOP;
+  sendBtn.classList.add("btn-stop");
+  sendBtn.title = "Stop generating";
+
+  // Create the streaming assistant bubble
+  const assistantDiv = document.createElement("div");
+  assistantDiv.className = "msg assistant msg-entering";
+  const roleEl = document.createElement("div");
+  roleEl.className = "msg-role";
+  roleEl.textContent = "ROSERAG";
+  const bubble = document.createElement("div");
+  bubble.className = "msg-bubble";
+  bubble.innerHTML = '<span class="streaming-cursor"></span>';
+  assistantDiv.appendChild(roleEl);
+  assistantDiv.appendChild(bubble);
+  chatMessages.appendChild(assistantDiv);
+  requestAnimationFrame(() => assistantDiv.classList.remove("msg-entering"));
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+
+  streamAbortController = new AbortController();
+  let fullAnswer = "";
+  let lastMeta = null;
 
   try {
-    const res = await fetch(`${API}/api/ask`, {
+    const res = await fetch(`${API}/api/ask/stream`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ question: text, top_k: 5 }),
+      signal: streamAbortController.signal,
     });
-    const data = await res.json();
-    thinkEl.remove();
 
-    if (res.ok) {
-      appendMsg("assistant", data.answer);
-      chatHistory.push({ role: "assistant", content: data.answer });
-      showRightPanel(data);
-    } else {
-      appendMsg("assistant", `Error: ${data.detail || "Request failed."}`);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Request failed" }));
+      bubble.innerHTML = `<p class="msg-error">Error: ${escHtml(err.detail || "Request failed")}</p>`;
+      finishStream();
+      return;
     }
-  } catch {
-    thinkEl.remove();
-    appendMsg("assistant", "Network error — ensure the backend is running.");
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        const raw = line.slice(6).trim();
+        if (!raw) continue;
+        try {
+          const ev = JSON.parse(raw);
+
+          if (ev.type === "meta") {
+            lastMeta = ev;
+            showRightPanel({ sources: ev.sources, trust: ev.trust, confidence: 0 });
+          } else if (ev.type === "token") {
+            fullAnswer += ev.content;
+            bubble.innerHTML = renderMarkdown(fullAnswer) + '<span class="streaming-cursor"></span>';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+          } else if (ev.type === "done") {
+            bubble.innerHTML = renderMarkdown(fullAnswer);
+            if (lastMeta) showRightPanel({ ...lastMeta, confidence: ev.confidence });
+            chatHistory.push({ role: "assistant", content: fullAnswer });
+          } else if (ev.type === "error") {
+            bubble.innerHTML = `<p class="msg-error">Error: ${escHtml(ev.detail)}</p>`;
+          }
+        } catch { /* malformed SSE line — skip */ }
+      }
+    }
+  } catch (err) {
+    if (err.name === "AbortError") {
+      // User stopped — finalise whatever was received
+      if (fullAnswer) {
+        bubble.innerHTML = renderMarkdown(fullAnswer);
+        bubble.classList.add("msg-truncated");
+        chatHistory.push({ role: "assistant", content: fullAnswer });
+      } else {
+        assistantDiv.remove();
+      }
+    } else {
+      bubble.innerHTML = `<p class="msg-error">Network error — ${escHtml(err.message || "connection failed")}.</p>`;
+    }
   }
 
-  sendBtn.disabled = false;
+  finishStream();
   chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function finishStream() {
+  streamAbortController = null;
+  sendBtn.innerHTML = ICON_SEND;
+  sendBtn.classList.remove("btn-stop");
+  sendBtn.title = "Send";
+  chatInput.focus();
 }
 
 function appendMsg(role, text) {
   const div = document.createElement("div");
-  div.className = `msg ${role}`;
-
+  div.className = `msg ${role} msg-entering`;
   const roleEl = document.createElement("div");
   roleEl.className = "msg-role";
   roleEl.textContent = role === "user" ? "You" : "ROSERAG";
-
   const bubble = document.createElement("div");
   bubble.className = "msg-bubble";
-  bubble.innerHTML = formatText(text);
-
+  bubble.innerHTML = role === "user" ? `<p>${escHtml(text)}</p>` : renderMarkdown(text);
   div.appendChild(roleEl);
   div.appendChild(bubble);
   chatMessages.appendChild(div);
-  chatMessages.scrollTop = chatMessages.scrollHeight;
-  return div;
-}
-
-function appendThinking() {
-  const div = document.createElement("div");
-  div.className = "msg assistant";
-
-  const roleEl = document.createElement("div");
-  roleEl.className = "msg-role";
-  roleEl.textContent = "ROSERAG";
-
-  const dots = document.createElement("div");
-  dots.className = "thinking-dots";
-  dots.innerHTML = "<span></span><span></span><span></span>";
-
-  div.appendChild(roleEl);
-  div.appendChild(dots);
-  chatMessages.appendChild(div);
+  requestAnimationFrame(() => div.classList.remove("msg-entering"));
   chatMessages.scrollTop = chatMessages.scrollHeight;
   return div;
 }
 
 // ══ Right Panel ═══════════════════════════════════════════════
 function openRightPanel() {
-  const rp = $("right-panel");
-  const overlay = $("nav-overlay");
-  rp.classList.add("rp-open");
-  // Show overlay only on tablet/mobile where the panel is a floating overlay
+  $("right-panel").classList.add("rp-open");
   if (window.innerWidth < 1024) {
+    const overlay = $("nav-overlay");
     overlay.classList.add("visible");
     overlay.onclick = closeRightPanel;
   }
@@ -210,9 +318,7 @@ function showRightPanel(data) {
   $("trust-components").innerHTML = Object.entries(comps).map(([k, v]) => `
     <div class="trust-comp-row">
       <span>${k.replace(/_/g, " ")}</span>
-      <div class="trust-comp-bar">
-        <div class="trust-comp-fill" style="width:${Math.round(v * 100)}%"></div>
-      </div>
+      <div class="trust-comp-bar"><div class="trust-comp-fill" style="width:${Math.round(v * 100)}%"></div></div>
       <span>${Math.round(v * 100)}%</span>
     </div>
   `).join("");
@@ -220,26 +326,81 @@ function showRightPanel(data) {
   // Sources
   const sources = data.sources || [];
   $("rp-sources").innerHTML = sources.length === 0
-    ? `<p style="font-size:12px;color:var(--ink-400)">No sources retrieved.</p>`
-    : sources.map(s => `
-      <div class="source-card">
-        <div class="source-card-header">
-          <span class="source-doc-name">${escHtml(s.document)}</span>
-          <span class="source-page-badge">p.${s.page}</span>
-          <span class="source-score-badge">${Math.round(s.score * 100)}%</span>
-        </div>
-        <div class="source-excerpt">"${escHtml((s.chunk || s.excerpt || "").slice(0, 220))}…"</div>
-      </div>
-    `).join("");
+    ? `<p class="rp-empty">No sources retrieved.</p>`
+    : sources.map((s, i) => {
+        const full  = s.chunk || s.excerpt || "";
+        const short = full.slice(0, 220);
+        const hasMore = full.length > 220;
+        return `
+          <div class="source-card" id="source-${i + 1}">
+            <div class="source-card-header">
+              <span class="source-num">[${i + 1}]</span>
+              <span class="source-doc-name">${escHtml(s.document)}</span>
+            </div>
+            <div class="source-card-meta">
+              <span class="source-page-badge">p.${s.page}</span>
+              <span class="source-score-badge">${Math.round(s.score * 100)}% match</span>
+            </div>
+            <div class="source-excerpt source-excerpt-collapsed" id="src-text-${i}">
+              ${escHtml(short)}${hasMore ? "…" : ""}
+            </div>
+            ${hasMore ? `<button class="source-expand-btn" onclick="toggleSourceText(${i}, ${JSON.stringify(full).replace(/</g,'\\u003c')})">Show more</button>` : ""}
+          </div>
+        `;
+      }).join("");
 }
 
-// ══ Documents ══════════════════════════════════════════════════
-fileInput.addEventListener("change", async () => {
-  const files = Array.from(fileInput.files);
-  if (!files.length) return;
+function toggleSourceText(i, full) {
+  const el  = $(`src-text-${i}`);
+  const btn = el.nextElementSibling;
+  const collapsed = el.classList.toggle("source-excerpt-collapsed");
+  el.textContent = collapsed ? full.slice(0, 220) + "…" : full;
+  if (btn) btn.textContent = collapsed ? "Show more" : "Show less";
+}
+
+// ══ Documents — Drag-and-drop ══════════════════════════════════
+const dropZone = $("drop-zone");
+
+if (dropZone) {
+  dropZone.addEventListener("dragover", e => {
+    e.preventDefault();
+    dropZone.classList.add("drag-over");
+  });
+  dropZone.addEventListener("dragleave", e => {
+    if (!dropZone.contains(e.relatedTarget)) dropZone.classList.remove("drag-over");
+  });
+  dropZone.addEventListener("drop", async e => {
+    e.preventDefault();
+    dropZone.classList.remove("drag-over");
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type === "application/pdf");
+    if (!files.length) { toast("Only PDF files are accepted.", "error"); return; }
+    await uploadFiles(files);
+  });
+}
+
+if (fileInput) {
+  fileInput.addEventListener("change", async () => {
+    const files = Array.from(fileInput.files);
+    if (files.length) await uploadFiles(files);
+    fileInput.value = "";
+  });
+}
+
+async function uploadFiles(files) {
+  const queue = $("upload-queue");
+  queue.classList.remove("hidden");
+  queue.innerHTML = "";
 
   for (const file of files) {
-    showUploadStatus(`Uploading ${file.name}…`, "");
+    const row = document.createElement("div");
+    row.className = "upload-row";
+    row.innerHTML = `
+      <span class="upload-filename">${escHtml(file.name)}</span>
+      <span class="upload-state uploading">Uploading…</span>
+    `;
+    queue.appendChild(row);
+    const stateEl = row.querySelector(".upload-state");
+
     const form = new FormData();
     form.append("file", file);
 
@@ -247,25 +408,22 @@ fileInput.addEventListener("change", async () => {
       const res  = await fetch(`${API}/api/documents/upload`, { method: "POST", body: form });
       const data = await res.json();
       if (res.ok) {
-        showUploadStatus(`✓ ${data.filename} — ${data.chunks} chunks`, "success");
-        loadDocuments();
+        stateEl.textContent = `✓ ${data.chunks} chunks`;
+        stateEl.className = "upload-state success";
+        toast(`${file.name} ingested — ${data.chunks} chunks`, "success");
       } else {
-        showUploadStatus(`Error: ${data.detail || "Upload failed"}`, "error");
+        stateEl.textContent = `Error: ${data.detail || "Upload failed"}`;
+        stateEl.className = "upload-state error";
+        toast(`Failed to upload ${file.name}`, "error");
       }
     } catch {
-      showUploadStatus("Network error during upload.", "error");
+      stateEl.textContent = "Network error";
+      stateEl.className = "upload-state error";
     }
   }
-  fileInput.value = "";
-});
 
-function showUploadStatus(msg, type) {
-  uploadStatus.textContent = msg;
-  uploadStatus.className = `upload-status ${type}`;
-  clearTimeout(uploadStatus._t);
-  if (type === "success" || type === "error") {
-    uploadStatus._t = setTimeout(() => uploadStatus.classList.add("hidden"), 5000);
-  }
+  setTimeout(() => { queue.innerHTML = ""; queue.classList.add("hidden"); }, 7000);
+  loadDocuments();
 }
 
 async function loadDocuments() {
@@ -281,7 +439,7 @@ async function loadDocuments() {
 function renderDocTable(docs) {
   const tbody = $("doc-tbody");
   if (!docs.length) {
-    tbody.innerHTML = `<tr><td colspan="5" class="empty-row">No documents in knowledge base.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="empty-row">No documents yet. Upload a PDF above.</td></tr>`;
     return;
   }
   tbody.innerHTML = docs.map(d => `
@@ -291,7 +449,7 @@ function renderDocTable(docs) {
       <td>${d.chunks}</td>
       <td>${fmtDate(d.ingested_at)}</td>
       <td>
-        <button class="btn-icon" title="Remove" onclick="deleteDoc('${d.id}')">
+        <button class="btn-icon" title="Remove" onclick="deleteDoc('${escAttr(d.id)}')">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6m5 0V4h4v2"/>
           </svg>
@@ -304,8 +462,146 @@ function renderDocTable(docs) {
 async function deleteDoc(docId) {
   if (!confirm("Remove this document from the knowledge base?")) return;
   const res = await fetch(`${API}/api/documents/${docId}`, { method: "DELETE" });
-  if (res.ok) { showUploadStatus("Document removed.", "success"); loadDocuments(); }
-  else         showUploadStatus("Deletion failed.", "error");
+  if (res.ok) { toast("Document removed.", "success"); loadDocuments(); }
+  else         toast("Deletion failed.", "error");
+}
+
+// ══ Google Drive ═══════════════════════════════════════════════
+async function initDrive() {
+  driveSelectedFiles.clear();
+  try {
+    const res  = await fetch(`${API}/api/drive/status`);
+    const data = await res.json();
+    if (data.connected) {
+      $("drive-connect-card").classList.add("hidden");
+      $("drive-browser").classList.remove("hidden");
+      driveFolderStack = [{ id: "root", name: "My Drive" }];
+      loadDriveFolder("root");
+    } else {
+      $("drive-connect-card").classList.remove("hidden");
+      $("drive-browser").classList.add("hidden");
+    }
+  } catch {
+    $("drive-connect-card").classList.remove("hidden");
+    $("drive-browser").classList.add("hidden");
+  }
+}
+
+async function loadDriveFolder(folderId = "root") {
+  const list = $("drive-file-list");
+  list.innerHTML = `<div class="loading-state">Loading…</div>`;
+  updateDriveBreadcrumb();
+  updateDriveSyncBar();
+
+  try {
+    const res  = await fetch(`${API}/api/drive/files?folder_id=${encodeURIComponent(folderId)}`);
+    if (!res.ok) throw new Error("Drive fetch failed");
+    const data = await res.json();
+    renderDriveItems(data.files || [], data.folders || []);
+  } catch {
+    list.innerHTML = `<div class="loading-state">Could not load Drive files. Check your connection.</div>`;
+  }
+}
+
+function renderDriveItems(files, folders) {
+  const list = $("drive-file-list");
+  if (!files.length && !folders.length) {
+    list.innerHTML = `<div class="loading-state">This folder is empty.</div>`;
+    return;
+  }
+
+  const folderHtml = folders.map(f => `
+    <div class="drive-item drive-folder" onclick="drillIntoFolder('${escAttr(f.id)}','${escAttr(f.name)}')">
+      <span class="drive-item-icon">📁</span>
+      <span class="drive-item-name">${escHtml(f.name)}</span>
+    </div>
+  `).join("");
+
+  const fileHtml = files.map(f => `
+    <label class="drive-item drive-file">
+      <input type="checkbox" class="drive-checkbox" value="${escAttr(f.id)}"
+        data-name="${escAttr(f.name)}" onchange="toggleDriveFile(this)" />
+      <span class="drive-item-icon">📄</span>
+      <span class="drive-item-name">${escHtml(f.name)}</span>
+      <span class="drive-item-size">${f.size || ""}</span>
+    </label>
+  `).join("");
+
+  list.innerHTML = folderHtml + fileHtml;
+}
+
+function drillIntoFolder(id, name) {
+  driveFolderStack.push({ id, name });
+  loadDriveFolder(id);
+}
+
+function updateDriveBreadcrumb() {
+  const bc = $("drive-breadcrumb");
+  if (!bc) return;
+  bc.innerHTML = driveFolderStack.map((f, i) => {
+    if (i === driveFolderStack.length - 1) return `<span>${escHtml(f.name)}</span>`;
+    return `<a href="#" onclick="driveNavTo(${i});return false;">${escHtml(f.name)}</a>`;
+  }).join(" / ");
+}
+
+function driveNavTo(index) {
+  driveFolderStack = driveFolderStack.slice(0, index + 1);
+  loadDriveFolder(driveFolderStack[driveFolderStack.length - 1].id);
+}
+
+function toggleDriveFile(checkbox) {
+  const key = JSON.stringify({ id: checkbox.value, name: checkbox.dataset.name });
+  if (checkbox.checked) driveSelectedFiles.add(key);
+  else driveSelectedFiles.delete(key);
+  updateDriveSyncBar();
+}
+
+function updateDriveSyncBar() {
+  const btn = $("drive-sync-btn");
+  const cnt = $("drive-selected-count");
+  const n = driveSelectedFiles.size;
+  if (cnt) cnt.textContent = n === 1 ? "1 file selected" : `${n} files selected`;
+  if (btn) btn.disabled = n === 0;
+}
+
+const driveSyncBtn = $("drive-sync-btn");
+if (driveSyncBtn) {
+  driveSyncBtn.addEventListener("click", async () => {
+    const files = [...driveSelectedFiles].map(s => JSON.parse(s));
+    if (!files.length) return;
+    driveSyncBtn.disabled = true;
+    driveSyncBtn.textContent = "Importing…";
+    try {
+      const res  = await fetch(`${API}/api/drive/sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ files }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast(`${data.imported} document(s) imported from Drive`, "success");
+        driveSelectedFiles.clear();
+        document.querySelectorAll(".drive-checkbox").forEach(cb => cb.checked = false);
+        updateDriveSyncBar();
+      } else {
+        toast(`Drive import failed: ${data.detail || "unknown error"}`, "error");
+      }
+    } catch {
+      toast("Network error during Drive import.", "error");
+    }
+    driveSyncBtn.disabled = false;
+    driveSyncBtn.textContent = "Import to Knowledge Base";
+  });
+}
+
+const driveDisconnect = $("drive-disconnect");
+if (driveDisconnect) {
+  driveDisconnect.addEventListener("click", async () => {
+    if (!confirm("Disconnect Google Drive?")) return;
+    await fetch(`${API}/api/drive/disconnect`);
+    toast("Google Drive disconnected.", "info");
+    initDrive();
+  });
 }
 
 // ══ Knowledge Graph ════════════════════════════════════════════
@@ -313,13 +609,11 @@ $("graph-refresh").addEventListener("click", loadGraph);
 $("graph-filter").addEventListener("change", loadGraph);
 
 async function loadGraph() {
-  const type   = $("graph-filter").value;
+  const type = $("graph-filter").value;
   const params = type ? `?entity_type=${type}` : "";
-
   try {
     const res  = await fetch(`${API}/api/graph${params}`);
-    const data = await res.json();
-    renderGraph(data);
+    renderGraph(await res.json());
   } catch {
     $("graph-entity-list").innerHTML = `<div class="loading-state">Failed to load graph.</div>`;
   }
@@ -336,7 +630,6 @@ function renderGraph(data) {
     $("graph-entity-list").innerHTML = `<div class="loading-state">No entities found. Upload documents to populate the knowledge graph.</div>`;
     return;
   }
-
   $("graph-entity-list").innerHTML = nodes.map(n => `
     <div class="entity-item">
       <span class="entity-type type-${n.type}">${n.type}</span>
@@ -351,8 +644,7 @@ async function loadAnalytics() {
   $("analytics-body").innerHTML = `<div class="loading-state">Loading analytics…</div>`;
   try {
     const res  = await fetch(`${API}/api/analytics`);
-    const data = await res.json();
-    renderAnalytics(data);
+    renderAnalytics(await res.json());
   } catch {
     $("analytics-body").innerHTML = `<div class="loading-state">Analytics unavailable.</div>`;
   }
@@ -365,47 +657,23 @@ function renderAnalytics(d) {
 
   $("analytics-body").innerHTML = `
     <div class="analytics-grid">
-      <div class="stat-card">
-        <div class="stat-value">${d.documents}</div>
-        <div class="stat-label">Documents</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">${d.chunks}</div>
-        <div class="stat-label">Chunks</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">${d.questions}</div>
-        <div class="stat-label">Questions</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">${Math.round((d.avg_trust_score || 0) * 100)}%</div>
-        <div class="stat-label">Avg Trust</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">${d.knowledge_graph?.nodes || 0}</div>
-        <div class="stat-label">Graph Nodes</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">${d.knowledge_graph?.edges || 0}</div>
-        <div class="stat-label">Graph Edges</div>
-      </div>
+      <div class="stat-card"><div class="stat-value">${d.documents}</div><div class="stat-label">Documents</div></div>
+      <div class="stat-card"><div class="stat-value">${d.chunks}</div><div class="stat-label">Chunks</div></div>
+      <div class="stat-card"><div class="stat-value">${d.questions}</div><div class="stat-label">Questions</div></div>
+      <div class="stat-card"><div class="stat-value">${Math.round((d.avg_trust_score || 0) * 100)}%</div><div class="stat-label">Avg Trust</div></div>
+      <div class="stat-card"><div class="stat-value">${d.knowledge_graph?.nodes || 0}</div><div class="stat-label">Graph Nodes</div></div>
+      <div class="stat-card"><div class="stat-value">${d.knowledge_graph?.edges || 0}</div><div class="stat-label">Graph Edges</div></div>
     </div>
-
     ${d.topics?.length ? `
     <div class="analytics-section">
       <h3>Institutional Topics</h3>
-      <div class="topic-chips">
-        ${d.topics.map(t => `<span class="topic-chip">${escHtml(t)}</span>`).join("")}
-      </div>
-    </div>
-    ` : ""}
-
+      <div class="topic-chips">${d.topics.map(t => `<span class="topic-chip">${escHtml(t)}</span>`).join("")}</div>
+    </div>` : ""}
     ${entityRows ? `
     <div class="analytics-section">
       <h3>Entity Landscape</h3>
       <div class="stat-row">${entityRows}</div>
-    </div>
-    ` : ""}
+    </div>` : ""}
   `;
 }
 
@@ -414,8 +682,7 @@ async function loadHistory() {
   $("history-list").innerHTML = `<div class="loading-state">Loading history…</div>`;
   try {
     const res  = await fetch(`${API}/api/history?limit=30`);
-    const data = await res.json();
-    renderHistory(data.entries || []);
+    renderHistory((await res.json()).entries || []);
   } catch {
     $("history-list").innerHTML = `<div class="loading-state">History unavailable.</div>`;
   }
@@ -440,9 +707,9 @@ function renderHistory(entries) {
           </div>
         </div>
         <div class="history-body">
-          <p>${escHtml(e.answer).replace(/\n/g, "<br>")}</p>
+          <div class="history-answer">${renderMarkdown(e.answer || "")}</div>
           ${e.sources?.length ? `
-          <div style="margin-top:10px;font-size:11px;color:var(--ink-400)">
+          <div class="history-sources">
             Sources: ${e.sources.map(s => `${escHtml(s.document)} p.${s.page}`).join(" · ")}
           </div>` : ""}
         </div>
@@ -452,8 +719,7 @@ function renderHistory(entries) {
 }
 
 function toggleHistory(header) {
-  const body = header.nextElementSibling;
-  body.classList.toggle("open");
+  header.nextElementSibling.classList.toggle("open");
 }
 
 // ══ Copilot ════════════════════════════════════════════════════
@@ -477,7 +743,7 @@ async function sendCopilot() {
   const resultEl = $("copilot-result");
   resultEl.classList.remove("hidden");
   resultEl.innerHTML = `
-    <div class="copilot-result-header">${currentAgent.toUpperCase()} AGENT</div>
+    <div class="copilot-result-header">${escHtml(currentAgent).toUpperCase()} AGENT</div>
     <div class="copilot-result-body"><div class="thinking-dots"><span></span><span></span><span></span></div></div>
   `;
 
@@ -491,18 +757,18 @@ async function sendCopilot() {
 
     if (res.ok) {
       resultEl.innerHTML = `
-        <div class="copilot-result-header">${data.agent.toUpperCase()} — ${escHtml(data.agent_description)}</div>
+        <div class="copilot-result-header">${escHtml(data.agent).toUpperCase()} — ${escHtml(data.agent_description)}</div>
         <div class="copilot-result-body">
-          ${formatText(data.answer)}
+          ${renderMarkdown(data.answer)}
           ${data.reasoning_notes ? `<div class="copilot-notes">${escHtml(data.reasoning_notes)}</div>` : ""}
         </div>
       `;
       showRightPanel(data);
     } else {
-      resultEl.innerHTML = `<div class="copilot-result-body" style="color:#991b1b">Error: ${data.detail || "Agent failed."}</div>`;
+      resultEl.innerHTML = `<div class="copilot-result-body msg-error">Error: ${data.detail || "Agent failed."}</div>`;
     }
   } catch {
-    resultEl.innerHTML = `<div class="copilot-result-body" style="color:#991b1b">Network error.</div>`;
+    resultEl.innerHTML = `<div class="copilot-result-body msg-error">Network error.</div>`;
   }
 }
 
@@ -519,12 +785,14 @@ function escHtml(str) {
     .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+function escAttr(str) {
+  return String(str || "").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
 function fmtDate(iso) {
   if (!iso) return "—";
   try {
-    return new Date(iso).toLocaleDateString("en-GB", {
-      day: "numeric", month: "short", year: "numeric",
-    });
+    return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
   } catch { return iso; }
 }
 
@@ -538,45 +806,25 @@ async function applyBranding() {
     const res = await fetch(`${API}/api/config`);
     if (!res.ok) return;
     const cfg = await res.json();
-
-    // CSS custom properties for colors
     const root = document.documentElement;
     if (cfg.brand_color_primary) root.style.setProperty("--rose-600", cfg.brand_color_primary);
     if (cfg.brand_color_accent)  root.style.setProperty("--rose-400", cfg.brand_color_accent);
-
-    // Brand name splits (ROSE / RAG logo halves)
     document.querySelectorAll(".brand-rose").forEach(el => el.textContent = cfg.brand_prefix);
     document.querySelectorAll(".brand-rag").forEach(el => el.textContent = cfg.brand_suffix);
-
-    // Tagline under logo in sidebar
     const taglineEl = document.querySelector(".nav-tagline");
     if (taglineEl) taglineEl.textContent = cfg.institution_tagline;
-
-    // Ask-view header
-    const askHeader = document.querySelector("#view-ask .view-header h1");
-    if (askHeader) askHeader.textContent = `Ask ${cfg.brand_prefix}${cfg.brand_suffix}`;
-
-    // Welcome block
+    const askH1 = document.querySelector("#view-ask .view-header h1");
+    if (askH1) askH1.textContent = `Ask ${cfg.brand_prefix}${cfg.brand_suffix}`;
     const welcomeH2 = document.querySelector(".welcome-block h2");
     if (welcomeH2) welcomeH2.textContent = cfg.institution_name;
-
     const welcomeP = document.querySelector(".welcome-block > p");
     if (welcomeP) {
-      welcomeP.textContent =
-        `Upload documents, then ask questions grounded in ${cfg.institution_name}'s ` +
-        `knowledge. Every answer includes source citations, trust score, and evidence trails.`;
+      welcomeP.textContent = `Upload documents, then ask questions grounded in ${cfg.institution_name}'s knowledge. Every answer includes source citations, trust score, and evidence trails.`;
     }
-
     const composerNote = document.querySelector(".composer-note");
-    if (composerNote) {
-      composerNote.textContent = `Answers sourced exclusively from ${cfg.institution_name} documents`;
-    }
-
-    // Page title
+    if (composerNote) composerNote.textContent = `Answers sourced exclusively from ${cfg.institution_name} documents`;
     document.title = `${cfg.brand_prefix}${cfg.brand_suffix} — ${cfg.institution_name}`;
-  } catch {
-    // Branding fetch failed — defaults remain in place
-  }
+  } catch { /* Branding fetch failed — defaults remain */ }
 }
 
 // ══ Google Drive ══════════════════════════════════════════════
@@ -746,3 +994,10 @@ function showDriveSyncStatus(msg, type) {
 applyBranding();
 checkHealth();
 setInterval(checkHealth, 30_000);
+
+// Handle ?drive=connected redirect
+if (new URLSearchParams(location.search).get("drive") === "connected") {
+  window.history.replaceState({}, "", "/");
+  toast("Google Drive connected!", "success");
+  switchView("drive");
+}
