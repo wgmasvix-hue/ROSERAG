@@ -6,7 +6,7 @@ from fastapi.responses import FileResponse
 import os
 
 from .api import documents, search, chat
-from .api import ask, history, analytics, graph, copilot, bridge, drive
+from .api import ask, history, analytics, graph, copilot, bridge, drive, collections
 from .services import memory_service
 from .config import settings
 
@@ -45,8 +45,9 @@ app.include_router(history.router,   prefix="/api")
 app.include_router(analytics.router, prefix="/api")
 app.include_router(graph.router,     prefix="/api")
 app.include_router(copilot.router,   prefix="/api")
-app.include_router(bridge.router,    prefix="/api")
+app.include_router(bridge.router,      prefix="/api")
 app.include_router(drive.router)
+app.include_router(collections.router, prefix="/api")
 
 
 @app.get("/api/health")

@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: roserag-platform
+  namespace: roserag
+  labels:
+    app: roserag-platform
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: roserag-platform
+  template:
+    metadata:
+      labels:
+        app: roserag-platform
+    spec:
+      containers:
+        - name: platform
+          image: roserag/platform:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NEXT_PUBLIC_API_URL
+              value: http://backend-service:8000
+            - name: NODE_ENV
+              value: production
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: platform-service
+  namespace: roserag
+spec:
+  selector:
+    app: roserag-platform
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
