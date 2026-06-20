@@ -33,9 +33,10 @@
     </div>
     <p class="nav-tagline">Institutional Intelligence Platform</p>
 
+    <div class="nav-section-label">Workspace</div>
     <div class="nav-links">
       <button class="nav-item active" data-view="ask">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
         Ask ROSERAG
       </button>
       <button class="nav-item" data-view="documents">
@@ -43,12 +44,20 @@
         Documents
       </button>
       <button class="nav-item" data-view="drive">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22a10 10 0 100-20 10 10 0 000 20z"/><path d="M12 8v4M12 16h.01"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12H2M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6L18.55 5.11A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>
         Google Drive
       </button>
+    </div>
+
+    <div class="nav-section-label">Intelligence</div>
+    <div class="nav-links">
       <button class="nav-item" data-view="graph">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
         Knowledge Graph
+      </button>
+      <button class="nav-item" data-view="copilot">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Copilot
       </button>
       <button class="nav-item" data-view="analytics">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
@@ -57,14 +66,6 @@
       <button class="nav-item" data-view="history">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         History
-      </button>
-      <button class="nav-item" data-view="copilot">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-        Copilot
-      </button>
-      <button class="nav-item" data-view="drive">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12H2M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6L18.55 5.11A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>
-        Google Drive
       </button>
     </div>
 
@@ -81,22 +82,30 @@
 
     <!-- VIEW: Ask -->
     <div class="view active" id="view-ask">
-      <div class="view-header">
-        <h1>Ask ROSERAG</h1>
-        <p>Evidence-grounded answers from your institutional knowledge base</p>
-      </div>
       <div class="chat-messages" id="chat-messages">
         <div class="welcome-block">
-          <div class="welcome-icon">
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          <div class="welcome-logo">
+            <span class="wl-rose">ROSE</span><span class="wl-rag">RAG</span>
           </div>
           <h2>Institutional Intelligence</h2>
-          <p>Upload documents, then ask questions grounded in your institutional knowledge. Every answer includes source citations, trust score, and evidence trails.</p>
+          <p>Upload documents and ask questions grounded in your institutional knowledge. Every answer includes source citations, trust score, and evidence trails.</p>
           <div class="hint-grid">
-            <div class="hint-chip" data-q="What are the key research findings in the uploaded documents?">Key findings</div>
-            <div class="hint-chip" data-q="What policies govern research at this institution?">Research policies</div>
-            <div class="hint-chip" data-q="Summarize the main themes across all documents.">Main themes</div>
-            <div class="hint-chip" data-q="What evidence supports the primary recommendations?">Evidence review</div>
+            <div class="hint-chip" data-q="What are the key research findings in the uploaded documents?">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              Key findings
+            </div>
+            <div class="hint-chip" data-q="What policies govern research at this institution?">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Research policies
+            </div>
+            <div class="hint-chip" data-q="Summarize the main themes across all documents.">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+              Main themes
+            </div>
+            <div class="hint-chip" data-q="What evidence supports the primary recommendations?">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+              Evidence review
+            </div>
           </div>
         </div>
       </div>
@@ -107,7 +116,10 @@
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           </button>
         </div>
-        <p class="composer-note">Answers sourced exclusively from uploaded institutional documents</p>
+        <div class="composer-footer">
+          <span class="composer-note">Sources from institutional documents</span>
+          <span class="composer-hint">Shift+Enter for new line</span>
+        </div>
       </div>
     </div>
 
@@ -118,8 +130,6 @@
         <p>Manage the institutional documents that power ROSERAG</p>
       </div>
       <div class="view-body">
-
-        <!-- Drag-and-drop upload zone -->
         <div class="drop-zone" id="drop-zone">
           <div class="drop-zone-inner">
             <div class="drop-zone-icon">
@@ -275,62 +285,19 @@
       </div>
     </div>
 
-    <!-- VIEW: Google Drive -->
-    <div class="view" id="view-drive">
-      <div class="view-header">
-        <h1>Google Drive</h1>
-        <p>Browse and ingest documents directly from your Google Drive</p>
-      </div>
-      <div class="view-body">
-
-        <!-- Not connected state -->
-        <div id="drive-connect-state">
-          <div class="drive-connect-card">
-            <div class="drive-icon">
-              <svg width="48" height="48" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
-                <path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3L27.5 53H0c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
-                <path d="M43.65 25L29.9 1.2C28.55.4 27 0 25.45 0 23.9 0 22.35.4 21 1.2L6.6 26.5l13.75 23.8H43.65z" fill="#00ac47"/>
-                <path d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.2c.8-1.4 1.2-2.95 1.2-4.5H59.8l5.65 9.5z" fill="#ea4335"/>
-                <path d="M43.65 25L57.4 1.2C56.05.4 54.5 0 52.95 0H34.35c-1.55 0-3.1.4-4.45 1.2z" fill="#00832d"/>
-                <path d="M59.8 53H20.35L6.6 76.8c1.35.8 2.9 1.2 4.45 1.2h62.2c1.55 0 3.1-.4 4.45-1.2z" fill="#2684fc"/>
-                <path d="M73.4 26.5L59.65 3c-1.35-.8-2.9-1.2-4.45-1.2h-.25L43.65 25 59.8 53h26.95L73.4 26.5z" fill="#ffba00"/>
-              </svg>
-            </div>
-            <h2>Connect Google Drive</h2>
-            <p>Grant read-only access to browse and ingest your Drive documents into the knowledge base.</p>
-            <a href="/api/drive/auth" class="btn-drive-connect">Connect Google Drive</a>
-            <p class="drive-note">Requires GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to be set in Vercel environment variables.</p>
-          </div>
-        </div>
-
-        <!-- Connected state -->
-        <div id="drive-browser-state" class="hidden">
-          <div class="drive-toolbar">
-            <button class="btn-secondary" id="drive-back" disabled>← Back</button>
-            <span id="drive-breadcrumb" class="drive-breadcrumb">My Drive</span>
-            <button class="btn-secondary" id="drive-disconnect" style="margin-left:auto;color:#991b1b">Disconnect</button>
-          </div>
-          <div id="drive-loading" class="loading-state hidden">Loading…</div>
-          <div id="drive-file-list" class="drive-file-list"></div>
-          <div class="drive-sync-bar" id="drive-sync-bar">
-            <span id="drive-selected-count">0 files selected</span>
-            <button class="btn-primary" id="drive-sync-btn" disabled>Ingest Selected</button>
-          </div>
-          <div id="drive-sync-status" class="upload-status hidden"></div>
-        </div>
-
-      </div>
-    </div>
-
   </main>
 
   <!-- ═══════════ RIGHT PANEL (Evidence) ═══════════ -->
   <aside class="right-panel" id="right-panel">
-    <button class="rp-close" id="rp-close" aria-label="Close">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
+    <div class="rp-header">
+      <span class="rp-title">Evidence</span>
+      <button class="rp-close" id="rp-close" aria-label="Close">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
     <div class="rp-placeholder" id="rp-placeholder">
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
       <p>Ask a question to see trust score and source evidence here.</p>
     </div>
 
@@ -356,7 +323,7 @@
   <!-- ═══════════ BOTTOM NAV (mobile only) ═══════════ -->
   <nav class="bottom-nav" id="bottom-nav">
     <button class="bn-tab active" data-view="ask">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
       <span>Ask</span>
     </button>
     <button class="bn-tab" data-view="documents">
@@ -364,8 +331,12 @@
       <span>Docs</span>
     </button>
     <button class="bn-tab" data-view="drive">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22a10 10 0 100-20 10 10 0 000 20z"/><path d="M12 8v4M12 16h.01"/></svg>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12H2M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6L18.55 5.11A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>
       <span>Drive</span>
+    </button>
+    <button class="bn-tab" data-view="copilot">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      <span>Agents</span>
     </button>
     <button class="bn-tab" data-view="analytics">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
@@ -375,20 +346,9 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
       <span>History</span>
     </button>
-    <button class="bn-tab" data-view="copilot">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-      <span>Agents</span>
-    </button>
-    <button class="bn-tab" data-view="drive">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12H2M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6L18.55 5.11A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>
-      <span>Drive</span>
-    </button>
   </nav>
 
-  <!-- Backdrop -->
   <div class="nav-overlay" id="nav-overlay"></div>
-
-  <!-- Toast notifications -->
   <div class="toast-container" id="toast-container" aria-live="polite"></div>
 
 </div>

@@ -1576,3 +1576,54 @@ html, body { height: 100%; font-family: var(--font); background: var(--ink-50); 
 
 /* ═══ UX: Welcome block bottom margin ═══════════════════════ */
 .welcome-block { padding-bottom: 20px; }
+
+/* ═══ Nav section labels ════════════════════════════════════ */
+.nav-section-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-300);
+  padding: 16px 16px 4px;
+  user-select: none;
+}
+
+/* ═══ Welcome logo text branding ════════════════════════════ */
+.welcome-logo {
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+.wl-rose { color: var(--rose-500); }
+.wl-rag  { color: var(--ink-400); }
+
+/* ═══ Composer footer (hint row) ════════════════════════════ */
+.composer-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 4px 12px 6px;
+}
+.composer-hint {
+  font-size: 0.7rem;
+  color: var(--ink-300);
+}
+
+/* ═══ Right panel header ════════════════════════════════════ */
+.rp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--ink-100);
+  flex-shrink: 0;
+}
+.rp-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-400);
+}
