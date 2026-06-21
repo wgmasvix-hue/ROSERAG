@@ -1,25 +1,81 @@
+version: "3.9"
+
 services:
+  # ── Vector database ─────────────────────────────────────────────────────────
   qdrant:
     image: qdrant/qdrant:latest
+    container_name: roserag-qdrant
     ports:
       - "6333:6333"
       - "6334:6334"
     volumes:
       - qdrant_data:/qdrant/storage
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
+  # ── Redis cache ──────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: roserag-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ── FastAPI backend ──────────────────────────────────────────────────────────
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: roserag-backend
     ports:
       - "8000:8000"
     env_file:
       - .env
     environment:
       - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - REDIS_URL=redis://redis:6379
       - OLLAMA_BASE_URL=http://host.docker.internal:11434
     depends_on:
-      - qdrant
+      qdrant:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - ./backend:/app
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Next.js platform ─────────────────────────────────────────────────────────
+  platform:
+    build:
+      context: ./platform
+      dockerfile: Dockerfile
+    container_name: roserag-platform
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:8000
+      - NODE_ENV=production
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   qdrant_data:
+  redis_data:
