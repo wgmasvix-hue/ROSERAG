@@ -1,0 +1,122 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main, claude/roserag-enhancements-hr6uin]
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      release:
+        description: "Create GitHub Release"
+        type: boolean
+        default: false
+
+jobs:
+  build-apk:
+    name: Build APK
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: platform/package-lock.json
+
+      - name: Install dependencies
+        working-directory: platform
+        run: npm ci
+
+      - name: Build Next.js static export
+        working-directory: platform
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: https://rag.chengetai.co.zw
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Sync Capacitor Android
+        working-directory: platform
+        run: npx cap sync android
+
+      - name: Make Gradle executable
+        working-directory: platform/android
+        run: chmod +x gradlew
+
+      - name: Build debug APK
+        working-directory: platform/android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Build release APK
+        working-directory: platform/android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Rename APKs
+        run: |
+          VERSION=$(grep versionName platform/android/app/build.gradle | head -1 | grep -oP '"\K[^"]+')
+          mkdir -p dist
+          cp platform/android/app/build/outputs/apk/debug/app-debug.apk \
+             dist/RoseRAG-${VERSION}-debug.apk
+          cp platform/android/app/build/outputs/apk/release/app-release-unsigned.apk \
+             dist/RoseRAG-${VERSION}-release.apk
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+
+      - name: Upload debug APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: roserag-debug-apk
+          path: dist/RoseRAG-*-debug.apk
+          retention-days: 30
+
+      - name: Upload release APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: roserag-release-apk
+          path: dist/RoseRAG-*-release.apk
+          retention-days: 30
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.release == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v{0}', env.VERSION) }}
+          name: RoseRAG ${{ env.VERSION }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            dist/RoseRAG-*-debug.apk
+            dist/RoseRAG-*-release.apk
+          body: |
+            ## RoseRAG ${{ env.VERSION }} — Android App
+
+            ### Download
+            | Build | File | Use case |
+            |-------|------|----------|
+            | Debug | `RoseRAG-${{ env.VERSION }}-debug.apk` | Testing, sideloading |
+            | Release (unsigned) | `RoseRAG-${{ env.VERSION }}-release.apk` | Production (sign before distributing) |
+
+            ### Install on Android
+            1. Download the **debug APK** above
+            2. On your Android phone, enable **Settings → Security → Unknown sources**
+            3. Open the downloaded `.apk` file to install
+            4. Connect to your RoseRAG backend at `https://rag.chengetai.co.zw`
+
+            ### What's inside
+            - Full RoseRAG web app wrapped as a native Android app
+            - Offline-capable PWA shell
+            - Native file picker for document uploads
+            - Dark-mode aware status bar

@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 import {
   Search, BookOpen, GitBranch, Mic, Shield, BarChart3,
-  ArrowRight, CheckCircle, Star, Brain, Menu, X
+  ArrowRight, CheckCircle, Star, Brain, Menu, X,
+  Smartphone, Download,
 } from "lucide-react";
 
 // ─── Data ──────────────────────────────────────────────────────────────────
@@ -13,7 +14,7 @@ const NAV_LINKS = [
   { label: "Home", href: "#home" },
   { label: "Features", href: "#features" },
   { label: "Solutions", href: "#solutions" },
-  { label: "Resources", href: "#resources" },
+  { label: "Mobile App", href: "#mobile" },
   { label: "Pricing", href: "#pricing" },
   { label: "About", href: "#about" },
 ];
@@ -428,6 +429,121 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Mobile App */}
+      <section id="mobile" className="py-24 bg-slate-950 text-white overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div>
+              <span className="inline-flex items-center gap-2 bg-rose-500/10 border border-rose-500/20 text-rose-400 px-3.5 py-1.5 rounded-full text-xs font-semibold mb-6">
+                <Smartphone className="w-3.5 h-3.5" />
+                Now on Android
+              </span>
+              <h2 className="text-4xl lg:text-5xl font-black mb-6 leading-tight">
+                RoseRAG in Your{" "}
+                <span className="text-rose-400">Pocket</span>
+              </h2>
+              <p className="text-lg text-slate-300 leading-relaxed mb-8">
+                Carry your institution&apos;s entire knowledge base with you. Search documents,
+                get AI answers, and read your notebooks anywhere — even offline.
+              </p>
+              <ul className="space-y-3 mb-10">
+                {[
+                  "AI-powered search across all institution documents",
+                  "Offline-capable with cached responses",
+                  "Native file picker for on-the-go uploads",
+                  "Dark mode and adaptive UI",
+                ].map((item) => (
+                  <li key={item} className="flex items-start gap-3 text-slate-300 text-sm">
+                    <CheckCircle className="w-4 h-4 text-green-400 mt-0.5 shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <div className="flex flex-wrap gap-3">
+                <Link href="/download"
+                  className="inline-flex items-center gap-2 bg-rose-600 hover:bg-rose-500 text-white font-bold px-6 py-3 rounded-xl transition-colors">
+                  <Download className="w-5 h-5" />
+                  Download APK
+                </Link>
+                <Link href="/download"
+                  className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/15 text-white font-medium px-6 py-3 rounded-xl transition-colors border border-white/10">
+                  <Smartphone className="w-4 h-4" />
+                  Install Guide
+                </Link>
+              </div>
+              <p className="text-slate-500 text-xs mt-4">Android 7.0+ · Free download · ~15 MB</p>
+            </div>
+
+            {/* Phone mockup */}
+            <div className="flex justify-center lg:justify-end">
+              <div className="relative">
+                <div className="absolute inset-0 bg-rose-600/20 blur-3xl rounded-full scale-75" />
+                <div className="relative w-64 bg-slate-900 rounded-[2.5rem] border-4 border-slate-700 shadow-2xl overflow-hidden">
+                  {/* Status bar */}
+                  <div className="bg-slate-950 px-4 py-2 flex justify-between text-[10px] text-slate-500">
+                    <span>9:41</span>
+                    <span>●●●</span>
+                  </div>
+                  {/* App header */}
+                  <div className="bg-slate-900 px-4 py-3 border-b border-slate-800 flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-lg bg-rose-600 flex items-center justify-center">
+                      <span className="text-white text-[10px] font-black">R</span>
+                    </div>
+                    <span className="text-white text-sm font-semibold">RoseRAG</span>
+                  </div>
+                  {/* Search bar */}
+                  <div className="px-3 py-3">
+                    <div className="bg-slate-800 rounded-xl px-3 py-2 flex items-center gap-2">
+                      <Search className="w-3.5 h-3.5 text-slate-500" />
+                      <span className="text-slate-500 text-xs">Ask your knowledge base…</span>
+                    </div>
+                  </div>
+                  {/* Chat messages */}
+                  <div className="px-3 pb-3 space-y-3">
+                    <div className="flex gap-2">
+                      <div className="w-5 h-5 rounded-full bg-rose-600 shrink-0 mt-0.5" />
+                      <div className="bg-slate-800 rounded-xl rounded-tl-sm px-3 py-2 flex-1">
+                        <p className="text-slate-300 text-[11px] leading-relaxed">
+                          Key findings on food security in Zimbabwe?
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 flex-row-reverse">
+                      <div className="w-5 h-5 rounded-full bg-blue-600 shrink-0 mt-0.5" />
+                      <div className="bg-rose-950 border border-rose-900 rounded-xl rounded-tr-sm px-3 py-2 flex-1">
+                        <p className="text-slate-200 text-[11px] leading-relaxed">
+                          Based on <span className="text-rose-300">[1]</span> FAO 2024…
+                          food insecurity affects 5.3M people.
+                        </p>
+                        <div className="flex gap-1 mt-1.5 flex-wrap">
+                          {["FAO", "WFP", "ZIMSTAT"].map((t) => (
+                            <span key={t} className="bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded text-[9px]">{t}</span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    {/* Confidence bar */}
+                    <div className="bg-slate-800 rounded-xl px-3 py-2">
+                      <div className="flex justify-between text-[9px] text-slate-500 mb-1">
+                        <span>Confidence</span>
+                        <span className="text-green-400">94%</span>
+                      </div>
+                      <div className="h-1 bg-slate-700 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-green-500 to-emerald-400 rounded-full" style={{ width: "94%" }} />
+                      </div>
+                    </div>
+                  </div>
+                  {/* Home bar */}
+                  <div className="bg-slate-950 flex justify-center py-2">
+                    <div className="w-16 h-1 bg-slate-600 rounded-full" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="py-24 bg-white">
         <div className="max-w-4xl mx-auto px-6 text-center">
@@ -472,7 +588,7 @@ export default function LandingPage() {
             {[
               { title: "Product", links: ["Features", "Solutions", "Pricing", "Changelog"] },
               { title: "Platform", links: ["DSpace", "Koha", "API", "Integrations"] },
-              { title: "Company", links: ["About", "Blog", "Careers", "Contact"] },
+              { title: "Downloads", links: ["Android App", "Install Guide", "Releases", "Changelog"] },
             ].map((col) => (
               <div key={col.title}>
                 <div className="text-white font-semibold text-sm mb-3">{col.title}</div>
