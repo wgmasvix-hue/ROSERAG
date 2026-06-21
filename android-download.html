@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Download RoseRAG for Android</title>
+  <meta name="description" content="Download the RoseRAG Android app — your institution's AI knowledge base in your pocket." />
+  <meta property="og:title" content="Download RoseRAG for Android" />
+  <meta property="og:description" content="AI-powered document search and knowledge base for institutions." />
+  <meta name="theme-color" content="#e11d48" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --rose:    #e11d48;
+      --rose-d:  #be123c;
+      --rose-l:  #fb7185;
+      --bg:      #020617;
+      --bg2:     #0f172a;
+      --bg3:     #1e293b;
+      --border:  #1e293b;
+      --text:    #f8fafc;
+      --muted:   #94a3b8;
+      --dim:     #475569;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    /* ── Nav ────────────────────────────────────────────── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(2,6,23,.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px;
+    }
+    .nav-logo { font-weight: 900; font-size: 1.1rem; letter-spacing: -.02em; }
+    .nav-logo span { color: var(--rose); }
+    .nav-back {
+      display: flex; align-items: center; gap: 6px;
+      color: var(--muted); font-size: .85rem;
+      transition: color .15s;
+    }
+    .nav-back:hover { color: var(--text); }
+    .nav-back svg { width:15px; height:15px; }
+    .btn-dl-small {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: var(--rose); color: #fff;
+      font-weight: 700; font-size: .82rem;
+      padding: 8px 18px; border-radius: 12px;
+      transition: background .15s, transform .1s;
+      white-space: nowrap;
+    }
+    .btn-dl-small:hover { background: var(--rose-d); transform: scale(1.03); }
+    .btn-dl-small svg { width:14px; height:14px; }
+
+    /* ── Hero ───────────────────────────────────────────── */
+    .hero {
+      position: relative; overflow: hidden;
+      padding: 80px 24px 60px;
+    }
+    .hero::before {
+      content: "";
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(225,29,72,.15), transparent 70%);
+      pointer-events: none;
+    }
+    .hero-inner {
+      max-width: 1100px; margin: 0 auto;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 60px;
+      align-items: center;
+    }
+    @media (max-width: 780px) {
+      .hero-inner { grid-template-columns: 1fr; }
+      .phone-wrap { display: none; }
+    }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: rgba(225,29,72,.1); border: 1px solid rgba(225,29,72,.25);
+      color: var(--rose-l); font-size: .78rem; font-weight: 600;
+      padding: 5px 14px; border-radius: 999px;
+      margin-bottom: 20px;
+    }
+    .badge svg { width: 13px; height: 13px; }
+
+    h1 {
+      font-size: clamp(2.4rem, 5vw, 3.6rem);
+      font-weight: 900; line-height: 1.05;
+      letter-spacing: -.03em;
+      margin-bottom: 20px;
+    }
+    h1 span { color: var(--rose); }
+
+    .hero-desc {
+      font-size: 1.05rem; color: var(--muted);
+      max-width: 480px; margin-bottom: 36px;
+    }
+
+    .dl-buttons {
+      display: flex; flex-wrap: wrap; gap: 12px;
+      margin-bottom: 28px;
+    }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 9px;
+      background: var(--rose); color: #fff;
+      font-weight: 800; font-size: 1rem;
+      padding: 14px 28px; border-radius: 16px;
+      transition: background .15s, transform .15s, box-shadow .15s;
+      box-shadow: 0 8px 24px rgba(225,29,72,.35);
+    }
+    .btn-primary:hover { background: var(--rose-d); transform: translateY(-2px); box-shadow: 0 12px 30px rgba(225,29,72,.45); }
+    .btn-primary svg { width: 20px; height: 20px; }
+    .btn-version { font-weight: 400; color: rgba(255,255,255,.6); font-size: .88rem; margin-left: 2px; }
+
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1);
+      color: var(--muted); font-weight: 600; font-size: .95rem;
+      padding: 13px 22px; border-radius: 16px;
+      transition: background .15s, color .15s;
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,.11); color: var(--text); }
+    .btn-secondary svg { width: 16px; height: 16px; }
+
+    .meta-list {
+      display: flex; flex-wrap: wrap; gap: 18px;
+      list-style: none;
+    }
+    .meta-list li {
+      display: flex; align-items: center; gap: 6px;
+      font-size: .85rem; color: var(--dim);
+    }
+    .meta-list li svg { width: 14px; height: 14px; color: #22c55e; }
+
+    /* ── Phone mockup ───────────────────────────────────── */
+    .phone-wrap { display: flex; justify-content: flex-end; }
+    .phone {
+      position: relative; width: 250px;
+      background: #1e293b;
+      border-radius: 44px;
+      border: 4px solid #334155;
+      box-shadow: 0 40px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.05);
+      overflow: hidden;
+    }
+    .phone::before {
+      content: "";
+      position: absolute; top: -80px; left: -80px; right: -80px; bottom: -80px;
+      background: radial-gradient(circle at 50% 30%, rgba(225,29,72,.2), transparent 60%);
+      pointer-events: none; z-index: 0;
+    }
+    .ph-status {
+      background: #0f172a;
+      padding: 8px 20px;
+      display: flex; justify-content: space-between;
+      font-size: 10px; color: #475569;
+      position: relative; z-index: 1;
+    }
+    .ph-topbar {
+      background: #0f172a;
+      padding: 10px 14px 10px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid #1e293b;
+      position: relative; z-index: 1;
+    }
+    .ph-logo {
+      display: flex; align-items: center; gap: 6px;
+    }
+    .ph-icon {
+      width: 24px; height: 24px; border-radius: 8px;
+      background: linear-gradient(135deg, #e11d48, #9f1239);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 8px; font-weight: 900; color: #fff;
+    }
+    .ph-appname { font-size: 12px; font-weight: 700; color: #f1f5f9; }
+    .ph-avatar {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: #334155; display: flex; align-items: center; justify-content: center;
+      font-size: 9px; color: #94a3b8;
+    }
+    .ph-search {
+      background: #0f172a; padding: 8px 14px 12px;
+      position: relative; z-index: 1;
+    }
+    .ph-searchbar {
+      background: #1e293b; border: 1px solid #334155;
+      border-radius: 20px; padding: 7px 12px;
+      display: flex; align-items: center; gap: 6px;
+      font-size: 10px; color: #475569;
+    }
+    .ph-searchbar svg { width: 11px; height: 11px; }
+
+    .ph-body {
+      background: #020617;
+      padding: 10px 12px 12px;
+      display: flex; flex-direction: column; gap: 10px;
+      min-height: 210px;
+      position: relative; z-index: 1;
+    }
+    .ph-msg-user {
+      align-self: flex-end;
+      background: var(--rose);
+      border-radius: 14px 14px 4px 14px;
+      padding: 7px 11px;
+      font-size: 10px; color: #fff;
+      max-width: 75%;
+    }
+    .ph-msg-ai {
+      display: flex; gap: 6px; align-items: flex-start;
+    }
+    .ph-ai-dot {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #2563eb; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 7px; font-weight: 700; color: #fff;
+    }
+    .ph-ai-bubble {
+      background: #1e293b; border: 1px solid #334155;
+      border-radius: 4px 14px 14px 14px;
+      padding: 7px 10px; flex: 1;
+    }
+    .ph-ai-text { font-size: 9.5px; color: #cbd5e1; line-height: 1.5; margin-bottom: 6px; }
+    .ph-cite { color: #fb7185; font-weight: 600; }
+    .ph-tags { display: flex; flex-wrap: wrap; gap: 3px; }
+    .ph-tag {
+      background: rgba(225,29,72,.15); border: 1px solid rgba(225,29,72,.25);
+      color: #fda4af; border-radius: 6px;
+      font-size: 8px; font-weight: 600; padding: 1px 5px;
+    }
+    .ph-conf {
+      background: #1e293b; border: 1px solid #334155;
+      border-radius: 10px; padding: 7px 10px;
+    }
+    .ph-conf-row {
+      display: flex; justify-content: space-between;
+      font-size: 8.5px; color: #475569; margin-bottom: 4px;
+    }
+    .ph-conf-row span:last-child { color: #4ade80; font-weight: 600; }
+    .ph-bar { height: 4px; background: #334155; border-radius: 99px; overflow: hidden; }
+    .ph-bar-fill { height: 100%; width: 94%; background: linear-gradient(90deg, #22c55e, #10b981); border-radius: 99px; }
+    .ph-input {
+      display: flex; gap: 6px; align-items: center;
+    }
+    .ph-input-field {
+      flex: 1; background: #1e293b; border: 1px solid #334155;
+      border-radius: 99px; padding: 5px 10px;
+      font-size: 9px; color: #475569;
+    }
+    .ph-send {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--rose); display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .ph-send svg { width: 10px; height: 10px; color: #fff; }
+    .ph-home {
+      background: #0f172a; padding: 6px;
+      display: flex; justify-content: center;
+      position: relative; z-index: 1;
+    }
+    .ph-home-bar { width: 56px; height: 3px; background: #334155; border-radius: 99px; }
+
+    /* ── App card ────────────────────────────────────────── */
+    .section { max-width: 1100px; margin: 0 auto; padding: 0 24px 64px; }
+
+    .app-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 24px; padding: 28px 32px;
+    }
+    .app-card-inner { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+    .app-icon {
+      width: 80px; height: 80px; border-radius: 22px; flex-shrink: 0;
+      background: linear-gradient(135deg, #e11d48, #9f1239);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; font-weight: 900; color: #fff;
+      box-shadow: 0 12px 32px rgba(225,29,72,.3);
+      letter-spacing: -.05em;
+    }
+    .app-info { flex: 1; min-width: 200px; }
+    .app-name-row { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; flex-wrap: wrap; }
+    .app-name { font-size: 1.15rem; font-weight: 800; }
+    .pill-green {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.2);
+      color: #4ade80; font-size: .72rem; font-weight: 600;
+      padding: 2px 10px; border-radius: 99px;
+    }
+    .pill-green::before {
+      content: ""; width: 6px; height: 6px; border-radius: 50%;
+      background: #4ade80;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+    .app-sub { font-size: .82rem; color: var(--dim); margin-bottom: 10px; }
+
+    .copy-row {
+      display: flex; gap: 8px; align-items: center; max-width: 520px; margin-top: 8px;
+    }
+    .copy-input {
+      flex: 1; background: var(--bg); border: 1px solid var(--border);
+      color: var(--muted); font-family: "SF Mono", "Fira Code", monospace;
+      font-size: .72rem; padding: 8px 12px; border-radius: 10px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .copy-btn {
+      background: var(--bg3); border: 1px solid var(--border);
+      color: var(--muted); font-size: .78rem; font-weight: 600;
+      padding: 8px 14px; border-radius: 10px; cursor: pointer;
+      transition: background .15s, color .15s; white-space: nowrap;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .copy-btn:hover { background: #334155; color: var(--text); }
+    .copy-btn svg { width: 13px; height: 13px; }
+
+    /* ── Steps ──────────────────────────────────────────── */
+    .steps-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+    .step-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 20px; padding: 24px;
+      transition: border-color .2s;
+    }
+    .step-card:hover { border-color: rgba(225,29,72,.3); }
+    .step-top {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .step-num {
+      width: 38px; height: 38px; border-radius: 12px;
+      background: var(--rose); color: #fff;
+      font-weight: 900; font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .step-icon svg { width: 18px; height: 18px; color: #334155; }
+    .step-title { font-weight: 700; font-size: .95rem; margin-bottom: 6px; }
+    .step-desc { font-size: .83rem; color: var(--muted); line-height: 1.55; }
+
+    /* ── Alert ──────────────────────────────────────────── */
+    .alert {
+      display: flex; gap: 14px; align-items: flex-start;
+      background: rgba(245,158,11,.07); border: 1px solid rgba(245,158,11,.2);
+      border-radius: 16px; padding: 18px 20px;
+    }
+    .alert svg { width: 18px; height: 18px; color: #f59e0b; flex-shrink: 0; margin-top: 1px; }
+    .alert-title { font-weight: 600; font-size: .88rem; color: #fcd34d; margin-bottom: 4px; }
+    .alert-body { font-size: .83rem; color: rgba(253,230,138,.65); line-height: 1.55; }
+    .alert-body a { color: rgba(253,230,138,.85); text-decoration: underline; }
+
+    /* ── Features ───────────────────────────────────────── */
+    .features-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+    }
+    .feat-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 18px; padding: 22px;
+      transition: border-color .2s;
+    }
+    .feat-card:hover { border-color: rgba(225,29,72,.25); }
+    .feat-icon {
+      width: 40px; height: 40px; border-radius: 12px;
+      background: rgba(225,29,72,.1); border: 1px solid rgba(225,29,72,.15);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 14px;
+    }
+    .feat-icon svg { width: 18px; height: 18px; color: var(--rose-l); }
+    .feat-title { font-weight: 700; font-size: .9rem; margin-bottom: 5px; }
+    .feat-desc { font-size: .8rem; color: var(--muted); line-height: 1.5; }
+
+    /* ── Requirements + Changelog ───────────────────────── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) { .two-col { grid-template-columns: 1fr; } }
+
+    .info-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 20px; padding: 24px;
+    }
+    .info-card h3 {
+      font-size: .95rem; font-weight: 700; margin-bottom: 18px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .info-card h3 svg { width: 16px; height: 16px; color: var(--rose-l); }
+    .check-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .check-list li {
+      display: flex; align-items: flex-start; gap: 9px;
+      font-size: .85rem; color: #cbd5e1;
+    }
+    .check-list li svg { width: 15px; height: 15px; color: #22c55e; flex-shrink: 0; margin-top: 2px; }
+    .arrow-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .arrow-list li {
+      display: flex; align-items: flex-start; gap: 9px;
+      font-size: .85rem; color: #cbd5e1;
+    }
+    .arrow-list li::before {
+      content: "→"; color: var(--rose-l); flex-shrink: 0; margin-top: 1px;
+    }
+
+    /* ── Final CTA ──────────────────────────────────────── */
+    .cta-box {
+      background: linear-gradient(135deg, rgba(159,18,57,.3), rgba(15,23,42,.8));
+      border: 1px solid rgba(225,29,72,.2);
+      border-radius: 28px; padding: 52px 32px;
+      text-align: center;
+    }
+    .cta-box h2 { font-size: 2rem; font-weight: 900; margin-bottom: 12px; }
+    .cta-box p { color: var(--muted); margin-bottom: 32px; max-width: 420px; margin-left: auto; margin-right: auto; }
+    .cta-buttons { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 20px; }
+    .cta-note { font-size: .8rem; color: var(--dim); }
+    .cta-note a { color: var(--muted); text-decoration: underline; }
+
+    /* ── Section headings ───────────────────────────────── */
+    .sec-head { text-align: center; margin-bottom: 40px; }
+    .sec-head h2 { font-size: 1.8rem; font-weight: 900; margin-bottom: 8px; }
+    .sec-head p { color: var(--muted); font-size: .95rem; }
+
+    /* ── Footer ─────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 28px 24px;
+      text-align: center;
+      font-size: .82rem; color: var(--dim);
+    }
+    footer .f-logo { font-weight: 900; font-size: 1rem; margin-bottom: 12px; }
+    footer .f-logo span { color: var(--rose); }
+    footer .f-links { display: flex; gap: 24px; justify-content: center; margin-bottom: 12px; }
+    footer .f-links a:hover { color: var(--muted); }
+
+    svg { display: inline-block; }
+  </style>
+</head>
+<body>
+
+  <!-- ── Nav ─────────────────────────────────────────────── -->
+  <nav>
+    <a class="nav-back" href="/">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Home
+    </a>
+    <div class="nav-logo"><span>ROSE</span>RAG</div>
+    <a class="btn-dl-small" id="navDl" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+      Download APK
+    </a>
+  </nav>
+
+  <!-- ── Hero ────────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="hero-inner">
+      <div>
+        <div class="badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>
+          Android App — Free Download
+        </div>
+        <h1>RoseRAG<br><span>for Android</span></h1>
+        <p class="hero-desc">
+          Your institution's entire AI knowledge base — in your pocket.
+          Search documents, get cited AI answers, and conduct research from anywhere.
+        </p>
+        <div class="dl-buttons">
+          <a class="btn-primary" id="mainDl" href="#">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            Download APK <span class="btn-version" id="vLabel">v1.0.0</span>
+          </a>
+          <a class="btn-secondary" id="releasesLink" href="#" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+            All Releases
+          </a>
+        </div>
+        <ul class="meta-list">
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Android 7.0+
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            ~15 MB
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Free forever
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Open source
+          </li>
+        </ul>
+      </div>
+
+      <!-- Phone mockup -->
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="ph-status"><span>9:41</span><span>●●●</span></div>
+          <div class="ph-topbar">
+            <div class="ph-logo">
+              <div class="ph-icon">RR</div>
+              <span class="ph-appname">RoseRAG</span>
+            </div>
+            <div class="ph-avatar">W</div>
+          </div>
+          <div class="ph-search">
+            <div class="ph-searchbar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              Ask your knowledge base…
+            </div>
+          </div>
+          <div class="ph-body">
+            <div class="ph-msg-user">Key findings on food security in Zimbabwe?</div>
+            <div class="ph-msg-ai">
+              <div class="ph-ai-dot">AI</div>
+              <div class="ph-ai-bubble">
+                <div class="ph-ai-text">
+                  Based on <span class="ph-cite">[1]</span> FAO 2024 and
+                  <span class="ph-cite">[2]</span> WFP Assessment,
+                  food insecurity affects 5.3M people…
+                </div>
+                <div class="ph-tags">
+                  <span class="ph-tag">FAO Report</span>
+                  <span class="ph-tag">WFP Data</span>
+                  <span class="ph-tag">ZIMSTAT</span>
+                </div>
+              </div>
+            </div>
+            <div class="ph-conf">
+              <div class="ph-conf-row">
+                <span>Confidence Score</span>
+                <span>94.2%</span>
+              </div>
+              <div class="ph-bar"><div class="ph-bar-fill"></div></div>
+            </div>
+            <div class="ph-input">
+              <div class="ph-input-field">Ask a follow-up…</div>
+              <div class="ph-send">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </div>
+            </div>
+          </div>
+          <div class="ph-home"><div class="ph-home-bar"></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── App card ─────────────────────────────────────────── -->
+  <div class="section">
+    <div class="app-card">
+      <div class="app-card-inner">
+        <div class="app-icon">RR</div>
+        <div class="app-info">
+          <div class="app-name-row">
+            <span class="app-name">RoseRAG</span>
+            <span class="pill-green">Latest release</span>
+          </div>
+          <div class="app-sub" id="appSub">co.zw.chengetai.rag · v1.0.0 · Knowledge Operating System</div>
+          <div class="copy-row">
+            <div class="copy-input" id="apkUrlDisplay"></div>
+            <button class="copy-btn" onclick="copyApk()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="copyIcon"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              <span id="copyText">Copy link</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Install steps ────────────────────────────────────── -->
+  <div class="section">
+    <div class="sec-head">
+      <h2>Install in 4 steps</h2>
+      <p>No Play Store needed — sideload in under 2 minutes</p>
+    </div>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-top">
+          <div class="step-num">1</div>
+          <div class="step-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          </div>
+        </div>
+        <div class="step-title">Download the APK</div>
+        <div class="step-desc">Tap the "Download APK" button on this page. The file is about 15 MB.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-top">
+          <div class="step-num">2</div>
+          <div class="step-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+        </div>
+        <div class="step-title">Allow unknown sources</div>
+        <div class="step-desc">Settings → Security → "Install unknown apps" → allow your browser or Files app.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-top">
+          <div class="step-num">3</div>
+          <div class="step-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>
+          </div>
+        </div>
+        <div class="step-title">Install the file</div>
+        <div class="step-desc">Open the downloaded .apk from your notifications or Downloads folder and tap Install.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-top">
+          <div class="step-num">4</div>
+          <div class="step-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+        </div>
+        <div class="step-title">Start searching</div>
+        <div class="step-desc">Launch RoseRAG from your app drawer. It automatically connects to your institution's knowledge base.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Security notice ──────────────────────────────────── -->
+  <div class="section">
+    <div class="alert">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <div>
+        <div class="alert-title">Sideloaded APK — security note</div>
+        <div class="alert-body">
+          This APK is distributed outside the Google Play Store. It is built automatically from our
+          <a id="repoLink" href="#" target="_blank" rel="noopener noreferrer">open-source repository</a>
+          via GitHub Actions on every push. You can verify the SHA-256 checksum of every release on the
+          <a id="releasesLink2" href="#" target="_blank" rel="noopener noreferrer">Releases page</a>.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Features ─────────────────────────────────────────── -->
+  <div class="section">
+    <div class="sec-head">
+      <h2>Everything in your pocket</h2>
+      <p>Full platform features, optimised for mobile</p>
+    </div>
+    <div class="features-grid">
+      <div class="feat-card">
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </div>
+        <div class="feat-title">Semantic Search</div>
+        <div class="feat-desc">AI-powered document discovery across your entire knowledge base</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+        </div>
+        <div class="feat-title">Knowledge Notebooks</div>
+        <div class="feat-desc">Save research threads and curate your own knowledge collections</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        <div class="feat-title">Document Ingestion</div>
+        <div class="feat-desc">Upload PDFs, DOCX, TXT, and images directly from your phone</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1"/></svg>
+        </div>
+        <div class="feat-title">Offline Access</div>
+        <div class="feat-desc">Cached answers available even without an internet connection</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+        </div>
+        <div class="feat-title">DSpace &amp; Koha Sync</div>
+        <div class="feat-desc">Pull directly from your institutional repositories</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+        <div class="feat-title">AI Copilot Agents</div>
+        <div class="feat-desc">Research, Librarian, Policy, and Executive persona agents</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Requirements & Changelog ─────────────────────────── -->
+  <div class="section">
+    <div class="two-col">
+      <div class="info-card">
+        <h3>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>
+          System requirements
+        </h3>
+        <ul class="check-list">
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Android 7.0 (Nougat) or later
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            ~15 MB free storage
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Internet connection for AI queries
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Camera (optional, for document scanning)
+          </li>
+        </ul>
+      </div>
+      <div class="info-card">
+        <h3>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          What's new in v1.0.0
+        </h3>
+        <ul class="arrow-list">
+          <li>Initial release — full web app in a native shell</li>
+          <li>DeepSeek AI for all chat and reasoning</li>
+          <li>Jina AI semantic embeddings</li>
+          <li>Dark-mode status bar and splash screen</li>
+          <li>Native file picker for document uploads</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CTA ──────────────────────────────────────────────── -->
+  <div class="section">
+    <div class="cta-box">
+      <h2>Ready to install?</h2>
+      <p>Download the APK now and carry your institution's knowledge base everywhere.</p>
+      <div class="cta-buttons">
+        <a class="btn-primary" id="ctaDl" href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          Download APK — Free
+        </a>
+        <a class="btn-secondary" href="/app/dashboard">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+          Use Web App Instead
+        </a>
+      </div>
+      <div class="cta-note">
+        Web app available at <a href="/">rag.chengetai.co.zw</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Footer ────────────────────────────────────────────── -->
+  <footer>
+    <div class="f-logo"><span>ROSE</span>RAG</div>
+    <div class="f-links">
+      <a href="/">Home</a>
+      <a href="/app/dashboard">Web App</a>
+      <a id="ghLink" href="#" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </div>
+    <div>© 2025 RoseRAG. Built with DeepSeek AI + Jina Embeddings.</div>
+  </footer>
+
+  <script>
+    const REPO    = "wgmasvix-hue/roserag";
+    const VERSION = "1.0.0";
+    const APK_URL = `https://github.com/${REPO}/releases/latest/download/RoseRAG-${VERSION}-debug.apk`;
+    const REL_URL = `https://github.com/${REPO}/releases/latest`;
+    const GH_URL  = `https://github.com/${REPO}`;
+
+    // Wire up all download links
+    ["navDl","mainDl","ctaDl"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.href = APK_URL;
+    });
+    document.getElementById("releasesLink").href  = REL_URL;
+    document.getElementById("releasesLink2").href = REL_URL;
+    document.getElementById("repoLink").href      = GH_URL;
+    document.getElementById("ghLink").href        = GH_URL;
+    document.getElementById("vLabel").textContent = `v${VERSION}`;
+    document.getElementById("apkUrlDisplay").textContent = APK_URL;
+    document.getElementById("appSub").textContent =
+      `co.zw.chengetai.rag · v${VERSION} · Knowledge Operating System`;
+
+    // Copy to clipboard
+    function copyApk() {
+      navigator.clipboard.writeText(APK_URL).then(() => {
+        document.getElementById("copyText").textContent = "Copied!";
+        document.getElementById("copyIcon").innerHTML =
+          `<polyline points="20 6 9 17 4 12" stroke="currentColor" stroke-width="2.5"/>`;
+        setTimeout(() => {
+          document.getElementById("copyText").textContent = "Copy link";
+          document.getElementById("copyIcon").innerHTML =
+            `<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>`;
+        }, 2500);
+      });
+    }
+  </script>
+</body>
+</html>
