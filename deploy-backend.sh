@@ -49,7 +49,6 @@ $SSH ${SSH_USER}@${SERVER} "
 echo "3/4  Writing .env config..."
 $SSH ${SSH_USER}@${SERVER} "
 sudo tee ${BACKEND_DIR}/.env > /dev/null <<'ENV'
-LLM_PROVIDER=openai
 LLM_API_BASE=https://api.deepseek.com
 LLM_API_KEY=sk-63ec52c1155e4b61989a5861975eae84
 CHAT_MODEL=deepseek-chat

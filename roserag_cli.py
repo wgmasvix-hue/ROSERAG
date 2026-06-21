@@ -65,48 +65,29 @@ def cmd_init(_args) -> None:
         "",
     ]
 
-    # ── LLM Provider ──────────────────────────────────────────────────────────
-    _section("LLM Provider")
-    print("  1) Ollama  — local, free (requires Ollama installed)")
-    print("  2) DeepSeek + Jina AI  — cloud, API keys needed")
-    print("  3) OpenAI  — cloud, API key needed")
-    choice = _ask("Provider", "1")
+    # ── API Keys ───────────────────────────────────────────────────────────────
+    _section("DeepSeek API Key")
+    print("  Get yours at: platform.deepseek.com → API Keys")
+    llm_key   = _ask("DeepSeek API key (sk-...)")
 
-    env.append("# ── LLM Provider ─────────────────────────────────────────────────────")
+    _section("Jina AI API Key (embeddings)")
+    print("  Get yours free at: jina.ai → API Keys  (1 M tokens/month)")
+    embed_key = _ask("Jina AI API key  (jina_...)")
 
-    if choice == "2":
-        llm_key   = _ask("DeepSeek API key (sk-...)")
-        embed_key = _ask("Jina AI API key  (jina_...)")
-        env += [
-            "LLM_PROVIDER=openai",
-            f"LLM_API_KEY={llm_key}",
-            "LLM_API_BASE=https://api.deepseek.com",
-            "CHAT_MODEL=deepseek-chat",
-            f"EMBED_API_KEY={embed_key}",
-            "EMBED_API_BASE=https://api.jina.ai",
-            "EMBED_MODEL=jina-embeddings-v5-omni-nano",
-        ]
-    elif choice == "3":
-        llm_key = _ask("OpenAI API key (sk-...)")
-        env += [
-            "LLM_PROVIDER=openai",
-            f"LLM_API_KEY={llm_key}",
-            "LLM_API_BASE=https://api.openai.com",
-            "CHAT_MODEL=gpt-4o-mini",
-            f"EMBED_API_KEY={llm_key}",
-            "EMBED_API_BASE=https://api.openai.com",
-            "EMBED_MODEL=text-embedding-3-small",
-        ]
-    else:
-        ollama_url   = _ask("Ollama base URL", "http://localhost:11434")
-        chat_model   = _ask("Ollama chat model", "llama3.2")
-        embed_model  = _ask("Ollama embed model", "nomic-embed-text")
-        env += [
-            "LLM_PROVIDER=ollama",
-            f"OLLAMA_BASE_URL={ollama_url}",
-            f"OLLAMA_CHAT_MODEL={chat_model}",
-            f"OLLAMA_EMBED_MODEL={embed_model}",
-        ]
+    env.append("# ── DeepSeek (Chat + Reasoning) ──────────────────────────────────────")
+    env += [
+        f"LLM_API_KEY={llm_key}",
+        "LLM_API_BASE=https://api.deepseek.com",
+        "CHAT_MODEL=deepseek-chat",
+        "REASONER_MODEL=deepseek-reasoner",
+        "",
+    ]
+    env.append("# ── Jina AI (Embeddings) ─────────────────────────────────────────────")
+    env += [
+        f"EMBED_API_KEY={embed_key}",
+        "EMBED_API_BASE=https://api.jina.ai",
+        "EMBED_MODEL=jina-embeddings-v5-omni-nano",
+    ]
 
     env.append("")
 
