@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "RoseRAG — AI Knowledge Operating System",
+  title: "ChengetAI Labs — AI Research Intelligence for DARE",
   description:
-    "Transform documents, repositories, and institutional knowledge into trusted, evidence-based intelligence.",
-  keywords: ["RAG", "knowledge management", "AI", "research", "library", "DSpace"],
+    "The AI intelligence layer on top of the DARE Institutional Repository (dspace.dare.co.zw). Ask questions, get cited answers, build research notebooks — powered by DSpace 8.1.",
+  keywords: ["ChengetAI", "DARE repository", "DSpace", "RAG", "AI research", "institutional repository", "Zimbabwe"],
   openGraph: {
-    title: "RoseRAG — AI Knowledge Operating System",
-    description: "Evidence-based AI for institutions, researchers, and libraries.",
+    title: "ChengetAI Labs — AI Research Intelligence for DARE",
+    description: "AI-powered discovery for the DARE Institutional Repository · dspace.dare.co.zw",
     type: "website",
   },
 };
