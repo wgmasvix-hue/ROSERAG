@@ -1,7 +1,7 @@
 """
 DSpace Management API.
 
-Endpoints for connecting, browsing, and syncing a DSpace 7.x institutional repository.
+Endpoints for connecting, browsing, and syncing a DSpace 7.x / 8.x institutional repository.
 All endpoints require DSPACE_URL to be configured in the environment.
 """
 
@@ -49,7 +49,7 @@ async def dspace_status():
                 "configured": True,
                 "connected": False,
                 "url": settings.dspace_url,
-                "message": "Cannot reach DSpace REST API — check URL and credentials",
+                "message": "Cannot reach DSpace REST API — check DSPACE_URL and ensure the /server/api endpoint is accessible",
             }
         site = await c.get_site_info()
         return {
@@ -94,13 +94,18 @@ async def browse_items(query: str = "", page: int = 0, size: int = 20):
     c = _connector()
     try:
         if query:
+            # Search results: bitstreams not resolved here (too slow per-item).
+            # has_pdf defaults to True — import will fail gracefully if no PDF exists.
             docs = await c.search(query, limit=size)
+            pdf_known = False
         else:
             docs = []
             async for doc in c.sync():
                 docs.append(doc)
                 if len(docs) >= size:
                     break
+            # sync() resolves bitstreams, so pdf_url is accurate
+            pdf_known = True
         return {
             "items": [
                 {
@@ -111,7 +116,7 @@ async def browse_items(query: str = "", page: int = 0, size: int = 20):
                     "year": d.year,
                     "doi": d.doi,
                     "url": d.url,
-                    "has_pdf": bool(d.pdf_url),
+                    "has_pdf": bool(d.pdf_url) if pdf_known else True,
                 }
                 for d in docs
             ],

@@ -430,14 +430,14 @@ function DSpaceModal({
                     <p className="text-slate-400 text-xs mt-2 line-clamp-2">{item.abstract}</p>
                   )}
                   <div className="flex items-center gap-2 mt-2">
-                    {item.has_pdf
-                      ? <span className="text-xs bg-green-500/15 text-green-400 px-2 py-0.5 rounded">PDF available</span>
-                      : <span className="text-xs bg-slate-700 text-slate-400 px-2 py-0.5 rounded">No PDF</span>}
+                    <span className="text-xs bg-amber-500/15 text-amber-400 px-2 py-0.5 rounded">
+                      {item.has_pdf ? "PDF available" : "PDF unconfirmed"}
+                    </span>
                   </div>
                 </div>
                 <button
                   onClick={() => importItem(item)}
-                  disabled={!!importing || imported.has(item.uuid) || !item.has_pdf}
+                  disabled={!!importing || imported.has(item.uuid)}
                   className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-amber-600 hover:bg-amber-700 text-white"
                 >
                   {importing === item.uuid ? (
