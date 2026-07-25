@@ -1,17 +1,21 @@
 """
-DSpace 7.x Repository Connector — Full Implementation.
+DSpace 7.x / 8.x Repository Connector.
 
-REST API reference: https://wiki.lyrasis.org/display/DSDOC7x/REST+API
+REST API reference:
+  DSpace 7: https://wiki.lyrasis.org/display/DSDOC7x/REST+API
+  DSpace 8: https://wiki.lyrasis.org/display/DSDOC8x/REST+API
 
 Key endpoints used:
-  POST /server/api/authn/login            — obtain JWT
-  GET  /server/api/core/sites             — site info / connectivity test
-  GET  /server/api/core/collections       — list all collections
-  GET  /server/api/core/items             — paginated item list (sync)
-  GET  /server/api/core/items/{uuid}      — single item metadata
-  GET  /server/api/core/items/{uuid}/bitstreams — resolve PDF bitstream
-  GET  /server/api/core/bitstreams/{uuid}/content — download file bytes
-  GET  /server/api/discover/search/objects — keyword search
+  POST /server/api/authn/login                      — obtain JWT
+  GET  /server/api/core/sites                       — site info / connectivity test
+  GET  /server/api/core/collections                 — list all collections
+  GET  /server/api/core/items                       — paginated item list (sync)
+  GET  /server/api/core/items/{uuid}                — single item metadata
+  GET  /server/api/core/items/{uuid}/bundles        — bundles (DSpace 8.x PDF path)
+  GET  /server/api/core/bundles/{uuid}/bitstreams   — bitstreams in a bundle (DSpace 8.x)
+  GET  /server/api/core/items/{uuid}/bitstreams     — flat bitstream list (DSpace 7.x fallback)
+  GET  /server/api/core/bitstreams/{uuid}/content   — download file bytes
+  GET  /server/api/discover/search/objects          — keyword search
 """
 
 import logging
@@ -31,7 +35,7 @@ class DSpaceConnector(RepositoryConnector):
     """Connects to a DSpace 7.x instance via its REST API."""
 
     name = "DSpace"
-    description = "DSpace 7.x institutional repository REST API connector."
+    description = "DSpace 7.x / 8.x institutional repository REST API connector."
 
     def __init__(
         self,
@@ -317,38 +321,76 @@ class DSpaceConnector(RepositoryConnector):
     ) -> Optional[str]:
         """
         Find the primary PDF bitstream for a DSpace item.
-        DSpace 7.x: items/{uuid}/bitstreams returns bitstreams from the ORIGINAL bundle.
+
+        DSpace 8.x changed the model: bundleName is on the bundle object, not
+        the bitstream. The correct path is:
+          1. GET /items/{uuid}/bundles  → find the bundle where name == "ORIGINAL"
+          2. GET /bundles/{bundle-uuid}/bitstreams → find a PDF bitstream
+
+        DSpace 7.x compat: /items/{uuid}/bitstreams still works and some 7.x
+        builds include bundleName on the bitstream. We try the bundle path first
+        (correct for 8.x) and fall back to the flat bitstream list (7.x).
         """
         try:
-            resp = await client.get(
+            # ── DSpace 8.x path: bundles → bitstreams ─────────────────────────
+            bundles_resp = await client.get(
+                f"{self.base_url}/server/api/core/items/{item_uuid}/bundles",
+                headers=self._headers(),
+                timeout=15,
+            )
+            if bundles_resp.status_code == 200:
+                bundles = bundles_resp.json().get("_embedded", {}).get("bundles", [])
+                for bundle in bundles:
+                    if bundle.get("name", "") != "ORIGINAL":
+                        continue
+                    bundle_uuid = bundle.get("uuid", "")
+                    if not bundle_uuid:
+                        continue
+                    bs_resp = await client.get(
+                        f"{self.base_url}/server/api/core/bundles/{bundle_uuid}/bitstreams",
+                        headers=self._headers(),
+                        timeout=15,
+                    )
+                    if bs_resp.status_code != 200:
+                        continue
+                    bitstreams = bs_resp.json().get("_embedded", {}).get("bitstreams", [])
+                    # Prefer PDF by mimetype
+                    for bs in bitstreams:
+                        meta = bs.get("metadata", {})
+                        mimetype = self._meta_value(
+                            meta if isinstance(meta, list) else
+                            [{"key": k, "value": vv.get("value", "") if isinstance(vv, dict) else str(vv)}
+                             for k, vs in meta.items() for vv in (vs if isinstance(vs, list) else [vs])],
+                            "dc.format.mimetype",
+                        )
+                        if "pdf" in mimetype.lower() and bs.get("uuid"):
+                            return f"{self.base_url}/server/api/core/bitstreams/{bs['uuid']}/content"
+                    # Fallback: first bitstream in ORIGINAL bundle
+                    for bs in bitstreams:
+                        if bs.get("uuid"):
+                            return f"{self.base_url}/server/api/core/bitstreams/{bs['uuid']}/content"
+
+            # ── DSpace 7.x fallback: flat bitstream list with bundleName field ─
+            flat_resp = await client.get(
                 f"{self.base_url}/server/api/core/items/{item_uuid}/bitstreams",
                 headers=self._headers(),
                 timeout=15,
             )
-            if resp.status_code != 200:
-                return None
-            data = resp.json()
-            bitstreams = data.get("_embedded", {}).get("bitstreams", [])
-
-            # Prefer: ORIGINAL bundle + PDF mimetype
-            for bs in bitstreams:
-                bundle = bs.get("bundleName", "")
-                meta = bs.get("metadata", {})
-                mimetype = self._meta_value(
-                    meta if isinstance(meta, list) else
-                    [{"key": k, "value": vv.get("value", "") if isinstance(vv, dict) else str(vv)}
-                     for k, vs in meta.items() for vv in (vs if isinstance(vs, list) else [vs])],
-                    "dc.format.mimetype",
-                )
-                if bundle == "ORIGINAL" and "pdf" in mimetype.lower():
-                    bs_uuid = bs.get("uuid", "")
-                    if bs_uuid:
-                        return f"{self.base_url}/server/api/core/bitstreams/{bs_uuid}/content"
-
-            # Fallback: first bitstream in ORIGINAL bundle regardless of type
-            for bs in bitstreams:
-                if bs.get("bundleName", "") == "ORIGINAL" and bs.get("uuid"):
-                    return f"{self.base_url}/server/api/core/bitstreams/{bs['uuid']}/content"
+            if flat_resp.status_code == 200:
+                bitstreams = flat_resp.json().get("_embedded", {}).get("bitstreams", [])
+                for bs in bitstreams:
+                    meta = bs.get("metadata", {})
+                    mimetype = self._meta_value(
+                        meta if isinstance(meta, list) else
+                        [{"key": k, "value": vv.get("value", "") if isinstance(vv, dict) else str(vv)}
+                         for k, vs in meta.items() for vv in (vs if isinstance(vs, list) else [vs])],
+                        "dc.format.mimetype",
+                    )
+                    if bs.get("bundleName", "") == "ORIGINAL" and "pdf" in mimetype.lower() and bs.get("uuid"):
+                        return f"{self.base_url}/server/api/core/bitstreams/{bs['uuid']}/content"
+                for bs in bitstreams:
+                    if bs.get("bundleName", "") == "ORIGINAL" and bs.get("uuid"):
+                        return f"{self.base_url}/server/api/core/bitstreams/{bs['uuid']}/content"
         except Exception as exc:
             log.debug("Bitstream resolution failed for %s: %s", item_uuid, exc)
         return None
