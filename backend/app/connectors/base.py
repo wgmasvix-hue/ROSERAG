@@ -1,29 +1,31 @@
 """
 Repository Connector Interface.
 
-ROSERAG does not replace institutional repositories (DSpace, Koha, Greenstone).
-It adds intelligence on top of them. This interface defines how any repository
-feeds into the ROSERAG ingestion pipeline.
-
-Implementations:
-  - DSpaceConnector (placeholder)
-  - KohaConnector (future)
-  - OAI-PMH Connector (future, covers many repositories)
+ROSERAG adds intelligence on top of institutional repositories (DSpace, Koha, etc.).
+This module defines the contract every connector must satisfy.
 """
 
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any, AsyncIterator
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Any, AsyncIterator, Optional
 
 
 @dataclass
 class RepositoryDocument:
-    """A document returned by a repository sync."""
-    external_id: str          # Repository-native identifier (e.g., DSpace handle)
+    """A document discovered and optionally downloaded from a repository."""
+
+    external_id: str
     title: str
-    filename: str
-    content_bytes: bytes      # Raw PDF/document bytes
-    metadata: Dict[str, Any]  # Author, date, subject, etc.
+    authors: list[str] = field(default_factory=list)
+    abstract: str = ""
+    year: str = ""
+    doi: Optional[str] = None
+    url: str = ""
+    pdf_url: Optional[str] = None
+    source: str = ""
+    filename: str = ""
+    content_bytes: bytes = b""
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class RepositoryConnector(ABC):
@@ -31,11 +33,10 @@ class RepositoryConnector(ABC):
     Abstract base for all institutional repository connectors.
 
     Lifecycle:
-      1. configure() — set connection parameters
-      2. test_connection() — validate connectivity
-      3. sync() — discover available documents
-      4. ingest() — pull content into ROSERAG pipeline
-      5. search() — search the source repository (optional)
+      1. test_connection() — validate connectivity
+      2. search()         — search the repository by keyword
+      3. ingest()         — fetch a single item (metadata + PDF bytes)
+      4. sync()           — page through all items (async generator)
     """
 
     name: str
@@ -43,45 +44,28 @@ class RepositoryConnector(ABC):
 
     @abstractmethod
     async def test_connection(self) -> bool:
-        """Return True if the repository is reachable."""
+        """Return True if the repository is reachable and authenticated."""
         ...
 
     @abstractmethod
-    async def sync(self) -> List[Dict[str, Any]]:
-        """
-        Discover documents available in the repository.
-        Returns list of document descriptors (no content yet).
-        """
+    async def search(self, query: str, limit: int = 10) -> list[RepositoryDocument]:
+        """Search the repository by keyword. Returns lightweight document descriptors."""
         ...
 
     @abstractmethod
-    async def ingest(
-        self,
-        external_id: str,
-    ) -> RepositoryDocument:
+    async def ingest(self, external_id: str) -> Optional[RepositoryDocument]:
         """
         Fetch a single document by its repository ID.
-        Returns bytes and metadata ready for ROSERAG ingestion.
+        Resolves bitstreams/attachments and populates content_bytes where possible.
+        Returns None if the item does not exist.
         """
         ...
 
     @abstractmethod
-    async def search(
-        self,
-        query: str,
-        limit: int = 10,
-    ) -> List[Dict[str, Any]]:
+    def sync(self) -> AsyncIterator[RepositoryDocument]:
         """
-        Search the source repository (keyword/metadata search).
-        Complements ROSERAG's semantic search with repository-native search.
+        Async generator that pages through all repository items.
+        Each yielded document has metadata populated; content_bytes may be empty
+        if the connector defers downloading.
         """
         ...
-
-    async def full_sync_ingest(self) -> AsyncIterator[RepositoryDocument]:
-        """
-        Convenience: discover all documents and yield each for ingestion.
-        Override for more efficient bulk retrieval if the repository supports it.
-        """
-        docs = await self.sync()
-        for doc_meta in docs:
-            yield await self.ingest(doc_meta["external_id"])

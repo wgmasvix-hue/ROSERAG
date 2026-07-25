@@ -34,9 +34,11 @@ class Settings(BaseSettings):
     top_k: int = 5
     data_dir: str = "data"
 
-    # ── DSpace Bridge ────────────────────────────────────────────────
-    dspace_url: str = ""
-    dspace_token: str = ""
+    # ── DSpace Integration ───────────────────────────────────────────
+    dspace_url: str = ""       # e.g. https://repository.institution.ac.zw
+    dspace_email: str = ""     # service account email for JWT auth
+    dspace_password: str = ""  # service account password for JWT auth
+    dspace_token: str = ""     # pre-supplied JWT (alternative to email/password)
 
     # ── Google Drive OAuth ───────────────────────────────────────────
     google_client_id: str = ""

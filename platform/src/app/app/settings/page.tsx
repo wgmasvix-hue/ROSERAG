@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import {
-  Settings, Key, Database, Bell, Shield, Users, Building2,
-  CheckCircle, AlertCircle, Zap, Globe, Cpu, Save, Eye, EyeOff
+  Settings, Key, Database, Bell, Shield, Users,
+  CheckCircle, AlertCircle, Globe, Save, Eye, EyeOff,
+  RefreshCw, Loader2,
 } from "lucide-react";
 
 const TABS = [
@@ -137,36 +138,174 @@ function APIKeysTab() {
   );
 }
 
+type DSpaceStatus = "idle" | "testing" | "ok" | "error";
+
+function DSpaceConfigPanel() {
+  const [url, setUrl] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
+  const [status, setStatus] = useState<DSpaceStatus>("idle");
+  const [message, setMessage] = useState("");
+  const [siteName, setSiteName] = useState("");
+
+  async function testConnection() {
+    setStatus("testing");
+    setMessage("");
+    try {
+      const res = await fetch("/api/dspace/status");
+      const data = await res.json();
+      if (data.connected) {
+        setStatus("ok");
+        setSiteName(data.site?.name || data.url);
+        setMessage(`Connected to: ${data.site?.name || data.url}`);
+      } else {
+        setStatus("error");
+        setMessage(data.message || "Cannot reach DSpace — check URL and credentials");
+      }
+    } catch {
+      setStatus("error");
+      setMessage("Network error — is the backend running?");
+    }
+  }
+
+  return (
+    <div className="card p-5 border-l-4 border-l-purple-500 space-y-4">
+      <div className="flex items-center gap-3">
+        <span className="text-2xl">📚</span>
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-slate-900">DSpace 7.x</span>
+            {status === "ok" && <span className="badge badge-green">Connected</span>}
+            {status === "error" && <span className="badge badge-rose">Error</span>}
+            {status === "idle" && <span className="badge badge-amber">Not configured</span>}
+          </div>
+          <p className="text-xs text-slate-500">Institutional repository REST API</p>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1.5">Repository URL</label>
+          <input
+            className="input"
+            placeholder="https://repository.institution.ac.zw"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+          />
+          <p className="text-xs text-slate-400 mt-1">Base URL of your DSpace 7.x instance</p>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Service Account Email</label>
+            <input
+              className="input"
+              type="email"
+              placeholder="service@institution.ac.zw"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Password</label>
+            <div className="relative">
+              <input
+                type={showPw ? "text" : "password"}
+                className="input pr-10"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPw(!showPw)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {message && (
+        <div className={`flex items-center gap-2 text-xs p-3 rounded-lg ${
+          status === "ok" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
+        }`}>
+          {status === "ok"
+            ? <CheckCircle className="w-4 h-4 flex-shrink-0" />
+            : <AlertCircle className="w-4 h-4 flex-shrink-0" />}
+          {message}
+        </div>
+      )}
+
+      <div className="flex gap-3">
+        <button
+          onClick={testConnection}
+          disabled={status === "testing"}
+          className="btn-secondary flex-1 justify-center text-xs"
+        >
+          {status === "testing"
+            ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Testing…</>
+            : <><RefreshCw className="w-3.5 h-3.5" /> Test Connection</>}
+        </button>
+        <button className="btn-primary flex-1 justify-center text-xs">
+          <Save className="w-3.5 h-3.5" /> Save to .env
+        </button>
+      </div>
+
+      <p className="text-xs text-slate-400">
+        Set <code className="bg-slate-100 px-1 rounded">DSPACE_URL</code>,{" "}
+        <code className="bg-slate-100 px-1 rounded">DSPACE_EMAIL</code>, and{" "}
+        <code className="bg-slate-100 px-1 rounded">DSPACE_PASSWORD</code> in your{" "}
+        <code className="bg-slate-100 px-1 rounded">.env</code> file to persist this configuration.
+      </p>
+    </div>
+  );
+}
+
 function ConnectorsTab() {
   const [configured, setConfigured] = useState<Record<string, boolean>>(
-    Object.fromEntries(CONNECTORS_LIST.map((c) => [c.id, c.configured]))
+    Object.fromEntries(CONNECTORS_LIST.filter((c) => c.id !== "dspace").map((c) => [c.id, c.configured]))
   );
   return (
-    <div className="space-y-4">
-      <div className="grid sm:grid-cols-2 gap-4">
-        {CONNECTORS_LIST.map((c) => (
-          <div key={c.id} className="card p-4">
-            <div className="flex items-start gap-3 mb-3">
-              <span className="text-2xl">{c.emoji}</span>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-slate-900 text-sm">{c.name}</span>
-                  <span className={`badge ${configured[c.id] ? "badge-green" : "badge-amber"}`}>
-                    {configured[c.id] ? "Connected" : "Not configured"}
-                  </span>
+    <div className="space-y-6">
+      {/* DSpace — full config panel */}
+      <div>
+        <h3 className="font-bold text-slate-900 mb-3">Institutional Repository</h3>
+        <DSpaceConfigPanel />
+      </div>
+
+      {/* Other connectors */}
+      <div>
+        <h3 className="font-bold text-slate-900 mb-3">Other Connectors</h3>
+        <div className="grid sm:grid-cols-2 gap-4">
+          {CONNECTORS_LIST.filter((c) => c.id !== "dspace").map((c) => (
+            <div key={c.id} className="card p-4">
+              <div className="flex items-start gap-3 mb-3">
+                <span className="text-2xl">{c.emoji}</span>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-slate-900 text-sm">{c.name}</span>
+                    <span className={`badge ${configured[c.id] ? "badge-green" : "badge-amber"}`}>
+                      {configured[c.id] ? "Connected" : "Not configured"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">{c.desc}</p>
+                  <span className="badge badge-blue mt-1">{c.category}</span>
                 </div>
-                <p className="text-xs text-slate-500 mt-0.5">{c.desc}</p>
-                <span className="badge badge-blue mt-1">{c.category}</span>
               </div>
+              <button
+                onClick={() => setConfigured((p) => ({ ...p, [c.id]: !p[c.id] }))}
+                className={configured[c.id]
+                  ? "btn-secondary w-full justify-center !text-xs !py-1.5"
+                  : "btn-primary w-full justify-center !text-xs !py-1.5"}
+              >
+                {configured[c.id] ? "Disconnect" : "Connect"}
+              </button>
             </div>
-            <button
-              onClick={() => setConfigured((p) => ({ ...p, [c.id]: !p[c.id] }))}
-              className={configured[c.id] ? "btn-secondary w-full justify-center !text-xs !py-1.5" : "btn-primary w-full justify-center !text-xs !py-1.5"}
-            >
-              {configured[c.id] ? "Disconnect" : "Connect"}
-            </button>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );

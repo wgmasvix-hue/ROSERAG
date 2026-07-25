@@ -6,6 +6,7 @@ import urllib.parse
 from fastapi import APIRouter, HTTPException
 
 from ..config import settings
+from ..connectors.dspace import DSpaceConnector
 from ..core.ingestion import ingest_document
 from ..models.schemas import (
     BridgePaperSchema,
@@ -90,25 +91,52 @@ async def bridge_search(req: BridgeSearchRequest) -> BridgeSearchResponse:
 @router.post("/import", response_model=BridgeImportResponse)
 async def bridge_import(req: BridgeImportRequest) -> BridgeImportResponse:
     """Download a paper's PDF and ingest it into the ROSERAG knowledge base."""
-    pdf_url = req.pdf_url
-    if not pdf_url:
-        raise HTTPException(
-            status_code=422,
-            detail="No PDF URL provided for this paper. Visit the paper's landing page to download manually.",
-        )
-
     # Build a safe filename
     safe_title = re.sub(r"[^\w\s-]", "", req.title or req.paper_id)
     safe_title = re.sub(r"\s+", "_", safe_title.strip())[:80]
     filename = f"{req.source}_{safe_title}.pdf" if safe_title else f"{req.paper_id.replace(':', '_')}.pdf"
 
-    try:
-        content = await download_paper(pdf_url)
-    except Exception as exc:
+    pdf_url = req.pdf_url
+
+    # DSpace-specific path: resolve bitstream when pdf_url is not pre-supplied
+    if not pdf_url and req.source == "dspace" and settings.dspace_url:
+        item_uuid = req.paper_id.removeprefix("dspace:")
+        try:
+            connector = DSpaceConnector(
+                base_url=settings.dspace_url,
+                email=getattr(settings, "dspace_email", ""),
+                password=getattr(settings, "dspace_password", ""),
+                token=settings.dspace_token,
+            )
+            doc = await connector.ingest(item_uuid)
+            if doc and doc.content_bytes:
+                content = doc.content_bytes
+                filename = doc.filename or filename
+            else:
+                raise HTTPException(
+                    status_code=422,
+                    detail=(
+                        f"DSpace item '{req.title or item_uuid}' has no downloadable PDF. "
+                        "It may require authentication or the file may not be attached."
+                    ),
+                )
+        except HTTPException:
+            raise
+        except Exception as exc:
+            raise HTTPException(502, detail=f"DSpace download failed: {exc}")
+    elif not pdf_url:
         raise HTTPException(
-            status_code=502,
-            detail=f"Failed to download PDF from {pdf_url}: {exc}",
+            status_code=422,
+            detail="No PDF URL provided for this paper. Visit the paper's landing page to download manually.",
         )
+    else:
+        try:
+            content = await download_paper(pdf_url)
+        except Exception as exc:
+            raise HTTPException(
+                status_code=502,
+                detail=f"Failed to download PDF from {pdf_url}: {exc}",
+            )
 
     if not content:
         raise HTTPException(status_code=502, detail="Downloaded file is empty.")

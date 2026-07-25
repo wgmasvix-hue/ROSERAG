@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import {
   FileText,
   Globe,
@@ -17,6 +17,9 @@ import {
   Zap,
   MessageSquare,
   ArrowRight,
+  Search,
+  Loader2,
+  CheckCircle,
   BookOpen,
   Quote,
 } from "lucide-react";
@@ -52,6 +55,17 @@ interface Notebook {
   content: string;
   lastUpdated: string;
   color: string;
+}
+
+
+interface DSpaceItem {
+  uuid: string;
+  title: string;
+  authors: string[];
+  abstract: string;
+  year: string;
+  url: string;
+  has_pdf: boolean;
 }
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
@@ -285,6 +299,170 @@ function Waveform({ progress }: { progress: number }) {
   );
 }
 
+// ─── DSpace Import Modal ──────────────────────────────────────────────────────
+
+function DSpaceModal({
+  notebookId,
+  onAdd,
+  onClose,
+}: {
+  notebookId: string;
+  onAdd: (source: Source) => void;
+  onClose: () => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<DSpaceItem[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [importing, setImporting] = useState<string | null>(null);
+  const [imported, setImported] = useState<Set<string>>(new Set());
+  const [error, setError] = useState("");
+
+  const search = useCallback(async () => {
+    if (!query.trim()) return;
+    setSearching(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/dspace/items?query=${encodeURIComponent(query)}&size=10`);
+      if (!res.ok) {
+        const d = await res.json();
+        setError(d.detail || "Search failed");
+        return;
+      }
+      const data = await res.json();
+      setResults(data.items || []);
+      if (!data.items?.length) setError("No items found in DSpace for this query.");
+    } catch {
+      setError("Cannot reach DSpace — is DSPACE_URL configured?");
+    } finally {
+      setSearching(false);
+    }
+  }, [query]);
+
+  async function importItem(item: DSpaceItem) {
+    setImporting(item.uuid);
+    try {
+      const res = await fetch(`/api/dspace/ingest/${item.uuid}`, { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        setImported((prev) => new Set([...prev, item.uuid]));
+        onAdd({
+          id: `dspace-${item.uuid}`,
+          name: `DSpace: ${item.title}`,
+          type: "dspace",
+          size: `${data.chunks || 0} chunks`,
+          pages: data.pages,
+        });
+      } else {
+        setError(data.detail || "Import failed");
+      }
+    } catch {
+      setError("Import request failed");
+    } finally {
+      setImporting(null);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-xl mx-4 flex flex-col max-h-[80vh]">
+        <div className="p-5 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
+              <Database className="w-4 h-4 text-amber-400" />
+            </div>
+            <div>
+              <h2 className="text-white font-semibold text-sm">Import from DSpace</h2>
+              <p className="text-slate-400 text-xs">Search your institutional repository</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-4 border-b border-slate-800 flex-shrink-0">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && search()}
+              placeholder="Search DSpace items..."
+              className="flex-1 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-500 px-4 py-2.5 focus:outline-none focus:border-amber-500/50"
+              autoFocus
+            />
+            <button
+              onClick={search}
+              disabled={searching || !query.trim()}
+              className="bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white px-4 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
+            >
+              {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              Search
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/25 text-red-400 text-xs p-3 rounded-lg">
+              {error}
+            </div>
+          )}
+          {!error && results.length === 0 && !searching && (
+            <div className="text-center py-8">
+              <Database className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+              <p className="text-slate-500 text-sm">Search your DSpace repository above</p>
+              <p className="text-slate-600 text-xs mt-1">
+                Requires <code className="bg-slate-800 px-1 rounded">DSPACE_URL</code> to be configured
+              </p>
+            </div>
+          )}
+          {results.map((item) => (
+            <div key={item.uuid} className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-white text-sm font-medium leading-snug">{item.title}</p>
+                  {item.authors.length > 0 && (
+                    <p className="text-slate-400 text-xs mt-1">{item.authors.slice(0, 2).join(", ")}{item.authors.length > 2 ? " et al." : ""}</p>
+                  )}
+                  {item.year && <span className="text-slate-500 text-xs">{item.year}</span>}
+                  {item.abstract && (
+                    <p className="text-slate-400 text-xs mt-2 line-clamp-2">{item.abstract}</p>
+                  )}
+                  <div className="flex items-center gap-2 mt-2">
+                    {item.has_pdf
+                      ? <span className="text-xs bg-green-500/15 text-green-400 px-2 py-0.5 rounded">PDF available</span>
+                      : <span className="text-xs bg-slate-700 text-slate-400 px-2 py-0.5 rounded">No PDF</span>}
+                  </div>
+                </div>
+                <button
+                  onClick={() => importItem(item)}
+                  disabled={!!importing || imported.has(item.uuid) || !item.has_pdf}
+                  className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-amber-600 hover:bg-amber-700 text-white"
+                >
+                  {importing === item.uuid ? (
+                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Importing…</>
+                  ) : imported.has(item.uuid) ? (
+                    <><CheckCircle className="w-3.5 h-3.5" /> Added</>
+                  ) : (
+                    <><Plus className="w-3.5 h-3.5" /> Add</>
+                  )}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="p-4 border-t border-slate-800 flex-shrink-0">
+          <button onClick={onClose} className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded-lg text-sm transition-colors">
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function NotebookPage() {
@@ -295,6 +473,7 @@ export default function NotebookPage() {
   const [showAudioPlayer, setShowAudioPlayer] = useState(false);
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [audioPlaying, setAudioPlaying] = useState(false);
+  const [showDSpaceModal, setShowDSpaceModal] = useState(false);
 
   const addMenuRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -361,6 +540,13 @@ export default function NotebookPage() {
       prev.map((n) =>
         n.id === notebookId ? { ...n, sources: n.sources.filter((s) => s.id !== sourceId) } : n
       )
+    );
+  }
+
+  function handleAddDSpaceSource(source: Source) {
+    if (!selectedNotebook) return;
+    setNotebooks((prev) =>
+      prev.map((n) => n.id === selectedNotebook ? { ...n, sources: [...n.sources, source] } : n)
     );
   }
 
@@ -494,11 +680,12 @@ export default function NotebookPage() {
                   Paste URL
                 </button>
                 <button
-                  onClick={() => setShowAddMenu(false)}
+                  onClick={() => { setShowAddMenu(false); setShowDSpaceModal(true); }}
                   className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-slate-300 hover:bg-slate-700 transition-colors"
                 >
-                  <Database className="w-4 h-4 text-slate-400" />
-                  Import from DSpace
+                  <Database className="w-4 h-4 text-amber-400" />
+                  <span>Import from DSpace</span>
+                  <span className="ml-auto text-[10px] bg-amber-600/20 text-amber-400 px-1.5 py-0.5 rounded font-medium">New</span>
                 </button>
               </div>
             )}
@@ -777,6 +964,13 @@ export default function NotebookPage() {
           </div>
         </div>
       </div>
+      {showDSpaceModal && selectedNotebook && (
+        <DSpaceModal
+          notebookId={selectedNotebook}
+          onAdd={handleAddDSpaceSource}
+          onClose={() => setShowDSpaceModal(false)}
+        />
+      )}
     </div>
   );
 }
