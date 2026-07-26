@@ -40,7 +40,7 @@ services:
       dockerfile: backend/Dockerfile
     container_name: roserag-backend
     ports:
-      - "127.0.0.1:8001:8000"
+      - "127.0.0.1:8002:8000"
     env_file:
       - .env
     environment:

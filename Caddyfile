@@ -14,7 +14,7 @@ rag.chengetai.co.zw {
 
     # ── API — proxy to FastAPI backend ──────────────────────────
     handle /api/* {
-        reverse_proxy localhost:8001 {
+        reverse_proxy localhost:8002 {
             header_up Host {host}
             header_up X-Real-IP {remote_host}
             # Required for SSE streaming (POST /api/ask/stream)
