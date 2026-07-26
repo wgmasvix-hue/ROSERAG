@@ -10,7 +10,7 @@ const SUGGESTIONS = [
   "smallholder farmer adaptation strategies",
 ];
 
-const PLATFORM_URL = "https://rag.chengetai.co.zw";
+const PLATFORM_URL = "https://roserag.dare.co.zw";
 
 export default function EmbedPage() {
   const [query, setQuery] = useState("");

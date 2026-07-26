@@ -5,10 +5,10 @@
 #
 #  Static files:  served from /opt/roserag/platform/out
 #  API:           proxied to FastAPI backend on localhost:8000
-#  widget.html:   available at https://rag.chengetai.co.zw/widget.html
+#  widget.html:   available at https://roserag.dare.co.zw/widget.html
 # ═══════════════════════════════════════════════════════════════
 
-rag.chengetai.co.zw {
+roserag.dare.co.zw {
 
     encode gzip
 

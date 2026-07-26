@@ -4,7 +4,7 @@
  * Load it with one script tag; it self-initialises.
  *
  * Usage (nginx sub_filter, DSpace community text, or any HTML):
- *   <script src="https://rag.chengetai.co.zw/widget-inject.js"></script>
+ *   <script src="https://roserag.dare.co.zw/widget-inject.js"></script>
  */
 (function () {
   'use strict';
@@ -12,7 +12,7 @@
   window.__chengetai_loaded = true;
 
   /* ── CONFIG ──────────────────────────────────────────────────── */
-  var API   = 'https://rag.chengetai.co.zw';
+  var API   = 'https://roserag.dare.co.zw';
   var ROSE  = '#9b2248';
   var ROSE2 = '#c43060';
   var BG    = '#0f0d1a';

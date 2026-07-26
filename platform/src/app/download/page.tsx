@@ -434,7 +434,7 @@ export default function DownloadPage() {
           <p className="text-slate-600 text-xs mt-5">
             Web app available at{" "}
             <Link href="/" className="text-slate-500 hover:text-slate-400 underline">
-              rag.chengetai.co.zw
+              roserag.dare.co.zw
             </Link>
           </p>
         </div>

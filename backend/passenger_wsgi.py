@@ -4,7 +4,7 @@ cPanel Python App entry point for RoseRAG FastAPI backend.
 In cPanel → Setup Python App:
   - Python version: 3.11
   - Application root: backend/
-  - Application URL: rag.chengetai.co.zw
+  - Application URL: roserag.dare.co.zw
   - Application startup file: passenger_wsgi.py
   - Application Entry point: application
 """
