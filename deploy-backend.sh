@@ -46,30 +46,40 @@ $SSH ${SSH_USER}@${SERVER} "
   echo '  ✓ Backend installed'
 "
 
-echo "3/4  Writing .env config..."
+echo "3/4  Uploading .env config..."
+if [ ! -f ".env" ]; then
+  echo "  ERROR: .env not found in the current directory."
+  echo "  Copy .env.example to .env and fill in your API keys first."
+  exit 1
+fi
+$SCP .env ${SSH_USER}@${SERVER}:/tmp/roserag.env
 $SSH ${SSH_USER}@${SERVER} "
-sudo tee ${BACKEND_DIR}/.env > /dev/null <<'ENV'
-LLM_API_BASE=https://api.deepseek.com
-LLM_API_KEY=sk-63ec52c1155e4b61989a5861975eae84
-CHAT_MODEL=deepseek-chat
-REASONER_MODEL=deepseek-reasoner
-EMBED_API_BASE=https://api.jina.ai
-EMBED_MODEL=jina-embeddings-v5-omni-nano
-EMBED_API_KEY=jina_8df55af7a1174c28a050f32acf9d2d0cmEPme0Bvg117iP1gqwrKb0iSmfjc
-QDRANT_HOST=localhost
-QDRANT_PORT=6333
-QDRANT_USE_HTTPS=false
-COLLECTION_NAME=roserag
-CHUNK_SIZE=1000
-CHUNK_OVERLAP=200
-TOP_K=5
-DATA_DIR=${BACKEND_DIR}/data
-INSTITUTION_NAME=RoseRAG
-BRAND_PREFIX=ROSE
-BRAND_SUFFIX=RAG
-ENV
-sudo mkdir -p ${BACKEND_DIR}/data
-echo '  ✓ Config written'
+  sudo mv /tmp/roserag.env ${BACKEND_DIR}/.env
+  sudo chmod 600 ${BACKEND_DIR}/.env
+  sudo chown ${SSH_USER}:${SSH_USER} ${BACKEND_DIR}/.env
+  sudo mkdir -p ${BACKEND_DIR}/data
+  echo '  ✓ .env installed'
+"
+
+echo "3b/4 Installing Qdrant..."
+$SSH ${SSH_USER}@${SERVER} "
+  if curl -sf http://127.0.0.1:6333/health > /dev/null 2>&1; then
+    echo '  ✓ Qdrant already running'
+  else
+    # Install Docker just for Qdrant (lightest approach)
+    if ! command -v docker &>/dev/null; then
+      curl -fsSL https://get.docker.com | sh
+      sudo usermod -aG docker ${SSH_USER} || true
+    fi
+    # Run Qdrant as a Docker container (persistent volume)
+    docker rm -f roserag-qdrant 2>/dev/null || true
+    docker run -d --name roserag-qdrant --restart unless-stopped \
+      -p 127.0.0.1:6333:6333 \
+      -v roserag-qdrant-data:/qdrant/storage \
+      qdrant/qdrant:latest
+    sleep 5
+    curl -sf http://127.0.0.1:6333/health > /dev/null && echo '  ✓ Qdrant started' || echo '  WARNING: Qdrant health check failed'
+  fi
 "
 
 echo "4/4  Creating systemd service..."

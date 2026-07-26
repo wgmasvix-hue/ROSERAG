@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ChengetAI Labs — DARE Research Search</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --rose:   #9b2248;
+      --rose2:  #c43060;
+      --accent: #d44e72;
+      --bg:     #0f0d1a;
+      --bg2:    #1a1028;
+      --bg3:    #231836;
+      --border: rgba(155,34,72,.28);
+      --text:   #f0eef8;
+      --muted:  #9a8fb0;
+      --gold:   #c8a84b;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ──────────────────────────────────────────── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(0,0,0,.30);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--rose), var(--accent));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; font-weight: 800; color: #fff; flex-shrink: 0;
+    }
+    .logo-name  { font-size: 15px; font-weight: 700; line-height: 1.1; }
+    .logo-sub   { font-size: 11px; color: var(--muted); }
+    .btn-platform {
+      font-size: 12px; color: var(--accent); font-weight: 600;
+      text-decoration: none; padding: 6px 13px; border-radius: 7px;
+      border: 1px solid rgba(212,78,114,.35);
+      transition: background .15s;
+    }
+    .btn-platform:hover { background: rgba(212,78,114,.1); }
+
+    /* ── Main ────────────────────────────────────────────── */
+    main { flex: 1; max-width: 780px; width: 100%; margin: 0 auto; padding: 28px 20px 40px; }
+
+    /* ── Search form ─────────────────────────────────────── */
+    .search-box {
+      display: flex; gap: 8px;
+      background: rgba(255,255,255,.05);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 5px 5px 5px 14px;
+      margin-bottom: 14px;
+      transition: border-color .2s;
+    }
+    .search-box:focus-within { border-color: var(--rose2); }
+    .search-box input {
+      flex: 1; background: none; border: none; outline: none;
+      color: var(--text); font-size: 14px; padding: 8px 0;
+    }
+    .search-box input::placeholder { color: var(--muted); }
+    .btn-search {
+      background: linear-gradient(135deg, var(--rose), var(--rose2));
+      color: #fff; border: none; border-radius: 8px;
+      padding: 9px 20px; font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: opacity .15s; white-space: nowrap;
+    }
+    .btn-search:hover { opacity: .88; }
+    .btn-search:disabled { opacity: .45; cursor: not-allowed; }
+
+    /* ── Suggestions ─────────────────────────────────────── */
+    .suggestions {
+      display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 28px;
+    }
+    .chip {
+      font-size: 12px; color: var(--muted); background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.08); border-radius: 20px;
+      padding: 5px 12px; cursor: pointer; transition: all .15s;
+    }
+    .chip:hover { color: var(--text); border-color: var(--rose); background: rgba(155,34,72,.1); }
+
+    /* ── Status / spinner ────────────────────────────────── */
+    .status {
+      display: none; align-items: center; gap: 10px;
+      color: var(--muted); font-size: 13px; margin-bottom: 18px;
+    }
+    .status.visible { display: flex; }
+    .spinner {
+      width: 16px; height: 16px; border: 2px solid rgba(155,34,72,.3);
+      border-top-color: var(--rose); border-radius: 50%;
+      animation: spin .7s linear infinite; flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Answer card ─────────────────────────────────────── */
+    .answer-card {
+      display: none; background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden; margin-bottom: 18px;
+    }
+    .answer-card.visible { display: block; }
+    .answer-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .answer-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+    .trust-badge {
+      font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px;
+      border: 1px solid; letter-spacing: .03em;
+    }
+    .trust-HIGH   { color: #4ade80; border-color: rgba(74,222,128,.35); background: rgba(74,222,128,.08); }
+    .trust-MEDIUM { color: var(--gold); border-color: rgba(200,168,75,.35); background: rgba(200,168,75,.08); }
+    .trust-LOW    { color: #f87171; border-color: rgba(248,113,113,.35); background: rgba(248,113,113,.08); }
+    .answer-body { padding: 18px 16px; font-size: 14px; line-height: 1.75; color: #ddd8f0; white-space: pre-wrap; }
+    .cursor { display: inline-block; width: 2px; height: 14px; background: var(--rose2); animation: blink .7s step-end infinite; vertical-align: middle; }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* ── Sources ─────────────────────────────────────────── */
+    .sources-section { display: none; }
+    .sources-section.visible { display: block; }
+    .sources-heading {
+      font-size: 11px; color: var(--muted); font-weight: 600;
+      text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px;
+    }
+    .source-card {
+      background: var(--bg3); border: 1px solid rgba(255,255,255,.07);
+      border-radius: 10px; padding: 12px 14px; margin-bottom: 8px;
+    }
+    .source-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 5px; }
+    .source-doc { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.3; }
+    .source-meta { font-size: 11px; color: var(--muted); white-space: nowrap; }
+    .source-excerpt { font-size: 12px; color: var(--muted); line-height: 1.6; }
+    .source-score {
+      display: inline-block; font-size: 10px; color: var(--rose);
+      background: rgba(155,34,72,.12); border: 1px solid rgba(155,34,72,.25);
+      border-radius: 4px; padding: 1px 6px; margin-top: 6px;
+    }
+
+    /* ── DARE footer bar ─────────────────────────────────── */
+    .dare-bar {
+      display: flex; align-items: center; gap: 8px; margin-top: 28px;
+      padding: 11px 14px; background: rgba(180,130,0,.07);
+      border: 1px solid rgba(180,130,0,.2); border-radius: 9px; font-size: 12px;
+    }
+    .dare-bar a { color: var(--gold); font-weight: 600; text-decoration: none; }
+    .dare-bar a:hover { text-decoration: underline; }
+    .dare-text { color: #b8a060; }
+
+    /* ── Error ───────────────────────────────────────────── */
+    .error-box {
+      display: none; background: rgba(248,113,113,.06);
+      border: 1px solid rgba(248,113,113,.25); border-radius: 10px;
+      padding: 14px 16px; font-size: 13px; color: #fca5a5; margin-bottom: 18px;
+    }
+    .error-box.visible { display: block; }
+
+    @media (max-width: 520px) {
+      .suggestions { flex-direction: column; }
+      .chip { width: max-content; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─────────────────────── CONFIG ──────────────────────────────
+  Change API_BASE to your server's address when self-hosting.
+  Everything else is automatic.
+──────────────────────────────────────────────────────────────── -->
+<script>
+  const API_BASE = "https://rag.chengetai.co.zw"; // ← your server
+  const DARE_URL = "https://dspace.dare.co.zw";
+
+  const SUGGESTIONS = [
+    "climate-smart agriculture Zimbabwe",
+    "food security Southern Africa",
+    "renewable energy rural communities",
+    "maternal health outcomes Zimbabwe",
+    "smallholder farmer adaptation",
+    "water sanitation hygiene education",
+  ];
+</script>
+
+<!-- ─────────────────────── HEADER ───────────────────────────── -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">C</div>
+    <div>
+      <div class="logo-name">ChengetAI Labs</div>
+      <div class="logo-sub">AI layer · DARE Repository</div>
+    </div>
+  </div>
+  <a class="btn-platform" id="platform-link" href="#" target="_blank" rel="noopener">
+    Open Platform ↗
+  </a>
+</header>
+
+<!-- ─────────────────────── MAIN ─────────────────────────────── -->
+<main>
+
+  <!-- Search -->
+  <div class="search-box">
+    <input id="q" type="text" placeholder="Ask a research question across the DARE repository…" autocomplete="off" />
+    <button class="btn-search" id="btn-ask" onclick="doAsk()">Ask AI</button>
+  </div>
+
+  <!-- Suggestion chips -->
+  <div class="suggestions" id="suggestions"></div>
+
+  <!-- Status -->
+  <div class="status" id="status">
+    <div class="spinner"></div>
+    <span id="status-text">Searching DARE repository…</span>
+  </div>
+
+  <!-- Error -->
+  <div class="error-box" id="error-box"></div>
+
+  <!-- Answer -->
+  <div class="answer-card" id="answer-card">
+    <div class="answer-header">
+      <span class="answer-label">AI Answer · DARE sources</span>
+      <span class="trust-badge trust-LOW" id="trust-badge">Retrieving…</span>
+    </div>
+    <div class="answer-body" id="answer-body"></div>
+  </div>
+
+  <!-- Sources -->
+  <div class="sources-section" id="sources-section">
+    <div class="sources-heading">Source documents</div>
+    <div id="sources-list"></div>
+  </div>
+
+  <!-- DARE bar -->
+  <div class="dare-bar">
+    <span>🔒</span>
+    <span class="dare-text">
+      Answers are grounded in documents from the
+      <a href="https://dspace.dare.co.zw" target="_blank" rel="noopener">DARE Institutional Repository</a>
+      · DSpace 8.1 · public access
+    </span>
+  </div>
+
+</main>
+
+<!-- ─────────────────────── SCRIPT ───────────────────────────── -->
+<script>
+  // Wire platform link
+  document.getElementById("platform-link").href = API_BASE;
+
+  // Render suggestion chips
+  const sugEl = document.getElementById("suggestions");
+  SUGGESTIONS.forEach(s => {
+    const chip = document.createElement("button");
+    chip.className = "chip";
+    chip.textContent = s;
+    chip.onclick = () => { document.getElementById("q").value = s; doAsk(); };
+    sugEl.appendChild(chip);
+  });
+
+  // Enter key submits
+  document.getElementById("q").addEventListener("keydown", e => {
+    if (e.key === "Enter") doAsk();
+  });
+
+  // ── State helpers ──────────────────────────────────────
+  function show(id)  { document.getElementById(id).classList.add("visible"); }
+  function hide(id)  { document.getElementById(id).classList.remove("visible"); }
+  function el(id)    { return document.getElementById(id); }
+
+  function setStatus(text) {
+    el("status-text").textContent = text;
+    show("status");
+  }
+
+  function setError(text) {
+    el("error-box").textContent = text;
+    el("error-box").classList.add("visible");
+  }
+
+  function clearError() {
+    el("error-box").classList.remove("visible");
+    el("error-box").textContent = "";
+  }
+
+  function renderSources(sources) {
+    const list = el("sources-list");
+    list.innerHTML = "";
+    if (!sources || !sources.length) return;
+
+    sources.forEach((s, i) => {
+      const card = document.createElement("div");
+      card.className = "source-card";
+      const pageStr = s.page && s.page !== "unknown" ? ` · p. ${s.page}` : "";
+      const scoreStr = s.score ? (s.score * 100).toFixed(0) + "% match" : "";
+      card.innerHTML = `
+        <div class="source-top">
+          <div class="source-doc">[${i+1}] ${escHtml(s.document)}</div>
+          <div class="source-meta">${escHtml(pageStr)}</div>
+        </div>
+        <div class="source-excerpt">${escHtml(s.excerpt || s.chunk || "")}</div>
+        ${scoreStr ? `<span class="source-score">${scoreStr}</span>` : ""}
+      `;
+      list.appendChild(card);
+    });
+
+    show("sources-section");
+  }
+
+  function trustClass(level) {
+    if (level === "HIGH")   return "trust-HIGH";
+    if (level === "MEDIUM") return "trust-MEDIUM";
+    return "trust-LOW";
+  }
+
+  function escHtml(str) {
+    return String(str || "")
+      .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+      .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
+  // ── Main ask function ─────────────────────────────────
+  async function doAsk() {
+    const question = el("q").value.trim();
+    if (!question) return;
+
+    // Reset UI
+    clearError();
+    hide("sources-section");
+    hide("answer-card");
+    el("answer-body").innerHTML = "";
+    el("sources-list").innerHTML = "";
+    el("btn-ask").disabled = true;
+    setStatus("Searching DARE repository…");
+
+    try {
+      const resp = await fetch(`${API_BASE}/api/ask/stream`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question, top_k: 5 }),
+      });
+
+      if (!resp.ok) {
+        throw new Error(`Server returned ${resp.status} — is the backend running?`);
+      }
+
+      const reader = resp.body.getReader();
+      const dec    = new TextDecoder();
+      let   buf    = "";
+
+      // Show answer card with blinking cursor while streaming
+      show("answer-card");
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buf += dec.decode(value, { stream: true });
+
+        // SSE messages are separated by \n\n
+        const parts = buf.split("\n\n");
+        buf = parts.pop(); // keep incomplete chunk
+
+        for (const part of parts) {
+          const line = part.trim();
+          if (!line.startsWith("data: ")) continue;
+
+          let evt;
+          try { evt = JSON.parse(line.slice(6)); } catch { continue; }
+
+          if (evt.type === "meta") {
+            // Sources arrive before any tokens
+            setStatus("Generating answer…");
+            renderSources(evt.sources);
+
+          } else if (evt.type === "token") {
+            // Append token text — keep cursor at end
+            hide("status");
+            const body = el("answer-body");
+            // Remove old cursor if present
+            const oldCursor = body.querySelector(".cursor");
+            if (oldCursor) oldCursor.remove();
+            body.appendChild(document.createTextNode(evt.content));
+            const cur = document.createElement("span");
+            cur.className = "cursor";
+            body.appendChild(cur);
+
+          } else if (evt.type === "done") {
+            // Remove cursor, set trust badge
+            const body = el("answer-body");
+            const cur  = body.querySelector(".cursor");
+            if (cur) cur.remove();
+            const badge = el("trust-badge");
+            const trust = evt.confidence
+              ? { trust_level: evt.confidence > .7 ? "HIGH" : evt.confidence > .4 ? "MEDIUM" : "LOW" }
+              : { trust_level: "LOW" };
+            // trust arrives in meta; confidence in done — use whichever is richer
+            badge.textContent = trust.trust_level;
+            badge.className   = `trust-badge ${trustClass(trust.trust_level)}`;
+
+          } else if (evt.type === "error") {
+            hide("status");
+            setError("Backend error: " + (evt.detail || "unknown"));
+          }
+        }
+      }
+
+    } catch (err) {
+      hide("answer-card");
+      hide("status");
+      setError(
+        err.message.includes("Failed to fetch")
+          ? `Cannot reach ${API_BASE} — check that the RoseRAG backend is running and accessible.`
+          : err.message
+      );
+    } finally {
+      el("btn-ask").disabled = false;
+      hide("status");
+    }
+  }
+</script>
+
+</body>
+</html>
