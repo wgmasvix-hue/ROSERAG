@@ -1,15 +1,14 @@
-version: "3.9"
-
 services:
   # ── Vector database ─────────────────────────────────────────────────────────
   qdrant:
     image: qdrant/qdrant:latest
     container_name: roserag-qdrant
     ports:
-      - "6333:6333"
-      - "6334:6334"
+      - "127.0.0.1:6333:6333"
+      - "127.0.0.1:6334:6334"
     volumes:
       - qdrant_data:/qdrant/storage
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
       interval: 30s
@@ -21,32 +20,19 @@ services:
     image: redis:7-alpine
     container_name: roserag-redis
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
       timeout: 5s
       retries: 3
 
-  # ── Ollama (local LLM + embeddings) ─────────────────────────────────────────
-  ollama:
-    image: ollama/ollama:latest
-    container_name: roserag-ollama
-    ports:
-      - "127.0.0.1:11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
-      interval: 15s
-      timeout: 10s
-      retries: 8
-      start_period: 30s
-
   # ── FastAPI backend ──────────────────────────────────────────────────────────
+  # Ollama runs natively on the host (already on port 11434).
+  # host-gateway lets the container reach it as host.docker.internal.
   backend:
     build:
       context: .
@@ -60,19 +46,19 @@ services:
       - QDRANT_HOST=qdrant
       - QDRANT_PORT=6333
       - REDIS_URL=redis://redis:6379
-      - LLM_API_BASE=http://ollama:11434
+      - LLM_API_BASE=http://host.docker.internal:11434
       - LLM_API_KEY=
       - CHAT_MODEL=llama3.2
       - REASONER_MODEL=llama3.2
-      - EMBED_API_BASE=http://ollama:11434
+      - EMBED_API_BASE=http://host.docker.internal:11434
       - EMBED_API_KEY=
       - EMBED_MODEL=nomic-embed-text
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       qdrant:
         condition: service_healthy
       redis:
-        condition: service_healthy
-      ollama:
         condition: service_healthy
     volumes:
       - ./backend/app:/app/app
@@ -84,23 +70,6 @@ services:
       timeout: 10s
       retries: 3
 
-  # ── Next.js platform ─────────────────────────────────────────────────────────
-  platform:
-    build:
-      context: ./platform
-      dockerfile: Dockerfile
-    container_name: roserag-platform
-    ports:
-      - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=http://backend:8000
-      - NODE_ENV=production
-    depends_on:
-      backend:
-        condition: service_healthy
-    restart: unless-stopped
-
 volumes:
   qdrant_data:
   redis_data:
-  ollama_data:
