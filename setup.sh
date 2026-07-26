@@ -90,7 +90,7 @@ ok "Containers started"
 # ── 5. Wait for backend ───────────────────────────────────────
 info "Waiting for backend to be ready (up to 90s)..."
 for i in $(seq 1 18); do
-  if curl -sf http://localhost:8000/api/health > /dev/null 2>&1; then
+  if curl -sf http://localhost:8001/api/health > /dev/null 2>&1; then
     ok "Backend healthy"
     break
   fi
@@ -184,7 +184,7 @@ ok "Caddy running"
 
 # ── 8. DSpace sync ────────────────────────────────────────────
 info "Triggering DARE repository sync (runs in background)..."
-curl -sf -X POST http://localhost:8000/api/dspace/sync > /dev/null && \
+curl -sf -X POST http://localhost:8001/api/dspace/sync > /dev/null && \
   ok "DSpace sync started" || warn "DSpace sync skipped (DSPACE_URL not configured in .env)"
 
 # ── 9. Summary ────────────────────────────────────────────────
