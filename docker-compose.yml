@@ -30,6 +30,22 @@ services:
       timeout: 5s
       retries: 3
 
+  # ── Ollama (local LLM + embeddings) ─────────────────────────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: roserag-ollama
+    ports:
+      - "127.0.0.1:11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 15s
+      timeout: 10s
+      retries: 8
+      start_period: 30s
+
   # ── FastAPI backend ──────────────────────────────────────────────────────────
   backend:
     build:
@@ -37,25 +53,29 @@ services:
       dockerfile: backend/Dockerfile
     container_name: roserag-backend
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     env_file:
       - .env
     environment:
       - QDRANT_HOST=qdrant
       - QDRANT_PORT=6333
       - REDIS_URL=redis://redis:6379
-      - LLM_API_BASE=https://api.deepseek.com
-      - CHAT_MODEL=deepseek-chat
-      - REASONER_MODEL=deepseek-reasoner
-      - EMBED_API_BASE=https://api.jina.ai
-      - EMBED_MODEL=jina-embeddings-v5-omni-nano
+      - LLM_API_BASE=http://ollama:11434
+      - LLM_API_KEY=
+      - CHAT_MODEL=llama3.2
+      - REASONER_MODEL=llama3.2
+      - EMBED_API_BASE=http://ollama:11434
+      - EMBED_API_KEY=
+      - EMBED_MODEL=nomic-embed-text
     depends_on:
       qdrant:
         condition: service_healthy
       redis:
         condition: service_healthy
+      ollama:
+        condition: service_healthy
     volumes:
-      - ./backend:/app
+      - ./backend/app:/app/app
       - ./data:/app/data
     restart: unless-stopped
     healthcheck:
@@ -83,3 +103,4 @@ services:
 volumes:
   qdrant_data:
   redis_data:
+  ollama_data:

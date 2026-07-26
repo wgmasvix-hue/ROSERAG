@@ -1,12 +1,13 @@
 """
-LLM client — DeepSeek via OpenAI-compatible API.
+LLM client — OpenAI-compatible API (Ollama, DeepSeek, or any compatible provider).
 
-Chat:       LLM_API_KEY + LLM_API_BASE + CHAT_MODEL
-            Defaults: https://api.deepseek.com / deepseek-chat
-Reasoner:   REASONER_MODEL=deepseek-reasoner (R1 chain-of-thought)
-            Returns reasoning_content (thinking) + content (answer) separately.
-Embeddings: EMBED_API_KEY + EMBED_API_BASE + EMBED_MODEL
-            Defaults: https://api.jina.ai / jina-embeddings-v5-omni-nano
+Chat:       LLM_API_BASE + CHAT_MODEL  (LLM_API_KEY optional for local Ollama)
+            Ollama default:  http://localhost:11434  / llama3.2
+            DeepSeek:        https://api.deepseek.com / deepseek-chat
+Reasoner:   REASONER_MODEL — same model for Ollama; deepseek-reasoner for DeepSeek.
+Embeddings: EMBED_API_BASE + EMBED_MODEL  (EMBED_API_KEY optional for local Ollama)
+            Ollama default:  http://localhost:11434  / nomic-embed-text
+            Jina AI:         https://api.jina.ai    / jina-embeddings-v5-omni-nano
 """
 
 import json as _json
@@ -26,13 +27,23 @@ def _embed_url() -> str:
     return f"{base}/v1/embeddings"
 
 
+def _is_local(base: str) -> bool:
+    """Ollama and other local providers don't require an API key."""
+    b = (base or "").lower()
+    return any(x in b for x in ("localhost", "127.0.0.1", "ollama", "::1"))
+
+
 def _chat_headers() -> Dict[str, str]:
-    return {"Authorization": f"Bearer {settings.llm_api_key}"}
+    if settings.llm_api_key:
+        return {"Authorization": f"Bearer {settings.llm_api_key}"}
+    return {}
 
 
 def _embed_headers() -> Dict[str, str]:
     key = settings.embed_api_key or settings.llm_api_key
-    return {"Authorization": f"Bearer {key}"}
+    if key:
+        return {"Authorization": f"Bearer {key}"}
+    return {}
 
 
 def _is_jina_v5() -> bool:
@@ -40,16 +51,18 @@ def _is_jina_v5() -> bool:
 
 
 def _check_api_key(for_what: str, embed: bool = False) -> None:
-    if not settings.llm_api_key:
+    if not _is_local(settings.llm_api_base) and not settings.llm_api_key:
         raise RuntimeError(
-            f"{for_what} requires LLM_API_KEY (your DeepSeek key). "
-            "Add it to .env or Vercel → Settings → Environment Variables."
+            f"{for_what} requires LLM_API_KEY. "
+            "Add it to .env, or set LLM_API_BASE to a local Ollama endpoint."
         )
-    if embed and not (settings.embed_api_key or settings.llm_api_key):
-        raise RuntimeError(
-            "Embeddings require EMBED_API_KEY (your Jina AI key). "
-            "Add it to .env or Vercel → Settings → Environment Variables."
-        )
+    if embed:
+        embed_base = settings.embed_api_base or settings.llm_api_base
+        if not _is_local(embed_base) and not (settings.embed_api_key or settings.llm_api_key):
+            raise RuntimeError(
+                "Embeddings require EMBED_API_KEY. "
+                "Add it to .env, or set EMBED_API_BASE to a local Ollama endpoint."
+            )
 
 
 # ── Chat ───────────────────────────────────────────────────────────────────────

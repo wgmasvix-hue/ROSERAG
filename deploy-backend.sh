@@ -1,120 +1,201 @@
 #!/usr/bin/env bash
-# ─────────────────────────────────────────────────────────────
-#  RoseRAG Backend — Deploy to rag.chengetai.co.zw
-#  Run AFTER deploy.sh:
+# ═══════════════════════════════════════════════════════════════
+#  RoseRAG — Backend Deploy (Ollama + Caddy)
+#  Run from your LOCAL machine:
 #    chmod +x deploy-backend.sh && ./deploy-backend.sh
-# ─────────────────────────────────────────────────────────────
+#
+#  What this does:
+#    1. Clones / updates the repo on the server at /opt/roserag
+#    2. Installs Caddy (HTTPS reverse proxy)
+#    3. Starts Ollama + Qdrant + Redis + FastAPI via Docker Compose
+#    4. Pulls llama3.2 and nomic-embed-text into Ollama
+#    5. Copies widget.html to the web root
+#    6. Writes the Caddyfile and reloads Caddy
+# ═══════════════════════════════════════════════════════════════
 
 set -e
 
 SERVER="34.68.70.25"
 DOMAIN="rag.chengetai.co.zw"
-SSH_USER="${SSH_USER:-wgmasvix}"
-SSH_PASS="${SSH_PASS:-Cheryl13..}"
-BACKEND_DIR="/opt/roserag-backend"
+SSH_USER="${SSH_USER:-root}"
+SSH_PASS="${SSH_PASS:-}"        # leave blank to use SSH key auth
+REPO_URL="https://github.com/wgmasvix-hue/ROSERAG.git"
+REMOTE_DIR="/opt/roserag"
 
-SSH="sshpass -p '${SSH_PASS}' ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15"
-SCP="sshpass -p '${SSH_PASS}' scp -o StrictHostKeyChecking=no"
-
-echo ""
-echo "┌────────────────────────────────────────┐"
-echo "│  RoseRAG Backend Deployer              │"
-echo "└────────────────────────────────────────┘"
-
-echo "1/4  Uploading backend..."
-$SCP roserag-backend.zip ${SSH_USER}@${SERVER}:/tmp/roserag-backend.zip
-
-echo "2/4  Installing backend..."
-$SSH ${SSH_USER}@${SERVER} "
-  sudo mkdir -p ${BACKEND_DIR}
-  cd /tmp
-  unzip -o roserag-backend.zip > /dev/null
-  sudo cp -r backend/. ${BACKEND_DIR}/
-  sudo cp requirements.txt ${BACKEND_DIR}/
-  rm -rf /tmp/backend /tmp/requirements.txt /tmp/roserag-backend.zip
-
-  # Install Python if needed
-  if ! command -v python3 &>/dev/null; then
-    sudo apt-get update -q && sudo apt-get install -y python3 python3-pip python3-venv
+# ── SSH helpers ───────────────────────────────────────────────
+if [ -n "$SSH_PASS" ]; then
+  if ! command -v sshpass &>/dev/null; then
+    command -v apt-get &>/dev/null && sudo apt-get install -y sshpass || \
+    command -v brew    &>/dev/null && brew install hudochenkov/sshpass/sshpass || \
+    { echo "ERROR: install sshpass first."; exit 1; }
   fi
-
-  # Create virtualenv and install deps
-  cd ${BACKEND_DIR}
-  python3 -m venv venv
-  ./venv/bin/pip install -q --upgrade pip
-  ./venv/bin/pip install -q -r requirements.txt
-  echo '  ✓ Backend installed'
-"
-
-echo "3/4  Uploading .env config..."
-if [ ! -f ".env" ]; then
-  echo "  ERROR: .env not found in the current directory."
-  echo "  Copy .env.example to .env and fill in your API keys first."
-  exit 1
+  SSH="sshpass -p '${SSH_PASS}' ssh -o StrictHostKeyChecking=no -o ConnectTimeout=20"
+  SCP="sshpass -p '${SSH_PASS}' scp -o StrictHostKeyChecking=no"
+else
+  SSH="ssh -o StrictHostKeyChecking=no -o ConnectTimeout=20"
+  SCP="scp -o StrictHostKeyChecking=no"
 fi
-$SCP .env ${SSH_USER}@${SERVER}:/tmp/roserag.env
-$SSH ${SSH_USER}@${SERVER} "
-  sudo mv /tmp/roserag.env ${BACKEND_DIR}/.env
-  sudo chmod 600 ${BACKEND_DIR}/.env
-  sudo chown ${SSH_USER}:${SSH_USER} ${BACKEND_DIR}/.env
-  sudo mkdir -p ${BACKEND_DIR}/data
-  echo '  ✓ .env installed'
-"
 
-echo "3b/4 Installing Qdrant..."
-$SSH ${SSH_USER}@${SERVER} "
-  if curl -sf http://127.0.0.1:6333/health > /dev/null 2>&1; then
-    echo '  ✓ Qdrant already running'
-  else
-    # Install Docker just for Qdrant (lightest approach)
-    if ! command -v docker &>/dev/null; then
-      curl -fsSL https://get.docker.com | sh
-      sudo usermod -aG docker ${SSH_USER} || true
-    fi
-    # Run Qdrant as a Docker container (persistent volume)
-    docker rm -f roserag-qdrant 2>/dev/null || true
-    docker run -d --name roserag-qdrant --restart unless-stopped \
-      -p 127.0.0.1:6333:6333 \
-      -v roserag-qdrant-data:/qdrant/storage \
-      qdrant/qdrant:latest
-    sleep 5
-    curl -sf http://127.0.0.1:6333/health > /dev/null && echo '  ✓ Qdrant started' || echo '  WARNING: Qdrant health check failed'
+echo ""
+echo "┌────────────────────────────────────────────┐"
+echo "│  RoseRAG  ·  Ollama + Caddy Deploy         │"
+echo "│  → ${DOMAIN}                  │"
+echo "└────────────────────────────────────────────┘"
+echo ""
+
+# ── 1. Verify connection ──────────────────────────────────────
+echo "1/6  Connecting…"
+eval "$SSH ${SSH_USER}@${SERVER} 'echo \"  ✓ connected as \$(whoami) on \$(hostname)\"'"
+
+# ── 2. Install Docker (if missing) ───────────────────────────
+echo "2/6  Checking Docker…"
+eval "$SSH ${SSH_USER}@${SERVER}" "bash -s" <<'REMOTE_DOCKER'
+if ! command -v docker &>/dev/null; then
+  echo "  Installing Docker…"
+  curl -fsSL https://get.docker.com | sh
+  systemctl enable docker && systemctl start docker
+  echo "  ✓ Docker installed"
+else
+  echo "  ✓ Docker $(docker --version | awk '{print $3}' | tr -d ',')"
+fi
+REMOTE_DOCKER
+
+# ── 3. Clone or update repo ───────────────────────────────────
+echo "3/6  Syncing repo…"
+eval "$SSH ${SSH_USER}@${SERVER}" "bash -s" <<REMOTE_REPO
+set -e
+if [ -d "${REMOTE_DIR}/.git" ]; then
+  cd ${REMOTE_DIR}
+  git fetch origin
+  git reset --hard origin/claude/roserag-enhancements-hr6uin
+  echo "  ✓ Repo updated"
+else
+  git clone --branch claude/roserag-enhancements-hr6uin ${REPO_URL} ${REMOTE_DIR}
+  echo "  ✓ Repo cloned"
+fi
+mkdir -p ${REMOTE_DIR}/data
+REMOTE_REPO
+
+# ── 4. Upload .env ────────────────────────────────────────────
+echo "4/6  Uploading .env…"
+if [ ! -f ".env" ]; then
+  echo "  WARNING: no local .env found — server will use existing .env (if any)"
+else
+  eval "$SCP .env ${SSH_USER}@${SERVER}:${REMOTE_DIR}/.env"
+  eval "$SSH ${SSH_USER}@${SERVER} 'chmod 600 ${REMOTE_DIR}/.env && echo \"  ✓ .env installed\"'"
+fi
+
+# ── 5. Start Docker Compose stack ────────────────────────────
+echo "5/6  Starting services (Ollama + Qdrant + Redis + Backend)…"
+eval "$SSH ${SSH_USER}@${SERVER}" "bash -s" <<REMOTE_STACK
+set -e
+cd ${REMOTE_DIR}
+
+# Stop old standalone containers if any
+docker rm -f roserag-qdrant roserag-ollama 2>/dev/null || true
+
+# Build & start (excluding the Next.js platform container — Caddy serves static)
+docker compose pull --quiet
+docker compose build --quiet
+docker compose up -d qdrant redis ollama backend
+
+echo "  Services started. Waiting for backend health check…"
+for i in \$(seq 1 30); do
+  if curl -sf http://127.0.0.1:8000/api/health > /dev/null 2>&1; then
+    echo "  ✓ Backend healthy"
+    break
   fi
-"
+  [ \$i -eq 30 ] && echo "  WARNING: backend not responding after 150s — check logs" || sleep 5
+done
 
-echo "4/4  Creating systemd service..."
-$SSH ${SSH_USER}@${SERVER} "
-sudo tee /etc/systemd/system/roserag-backend.service > /dev/null <<SERVICE
-[Unit]
-Description=RoseRAG FastAPI Backend
-After=network.target
+# Pull Ollama models (runs in background — takes a few minutes first time)
+echo "  Pulling Ollama models (runs in background)…"
+docker exec roserag-ollama ollama pull llama3.2    &
+docker exec roserag-ollama ollama pull nomic-embed-text &
+echo "  ✓ Model pulls started (llama3.2 ~2 GB, nomic-embed-text ~270 MB)"
+echo "    Monitor: docker exec roserag-ollama ollama list"
+REMOTE_STACK
 
-[Service]
-User=${SSH_USER}
-WorkingDirectory=${BACKEND_DIR}
-EnvironmentFile=${BACKEND_DIR}/.env
-ExecStart=${BACKEND_DIR}/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 --workers 2
-Restart=always
-RestartSec=5
+# ── 6. Install Caddy + write Caddyfile ───────────────────────
+echo "6/6  Installing Caddy and configuring HTTPS…"
+eval "$SSH ${SSH_USER}@${SERVER}" "bash -s" <<REMOTE_CADDY
+set -e
+DOMAIN="${DOMAIN}"
+WEB_ROOT="${REMOTE_DIR}/platform/out"
 
-[Install]
-WantedBy=multi-user.target
-SERVICE
+# Install Caddy
+if ! command -v caddy &>/dev/null; then
+  echo "  Installing Caddy…"
+  apt-get install -y debian-keyring debian-archive-keyring apt-transport-https curl 2>/dev/null || true
+  curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' \
+    | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+  curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' \
+    | tee /etc/apt/sources.list.d/caddy-stable.list
+  apt-get update -q && apt-get install -y caddy
+  echo "  ✓ Caddy installed"
+else
+  echo "  ✓ Caddy already installed ($(caddy version))"
+fi
 
-sudo systemctl daemon-reload
-sudo systemctl enable roserag-backend
-sudo systemctl restart roserag-backend
-sleep 3
-sudo systemctl status roserag-backend --no-pager | head -15
-"
+# Stop nginx if running (port conflict)
+systemctl stop nginx 2>/dev/null && systemctl disable nginx 2>/dev/null && echo "  (stopped nginx)" || true
+
+mkdir -p /var/log/caddy
+
+# Write Caddyfile
+cat > /etc/caddy/Caddyfile << CADDYEOF
+\${DOMAIN} {
+
+    encode gzip
+
+    handle /api/* {
+        reverse_proxy localhost:8000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            flush_interval -1
+        }
+    }
+
+    handle {
+        root * \${WEB_ROOT}
+        try_files {path} {path}/index.html =404
+        file_server
+    }
+
+    @static {
+        path /_next/static/*
+    }
+    header @static Cache-Control "public, max-age=31536000, immutable"
+
+    log {
+        output file /var/log/caddy/roserag-access.log {
+            roll_size 10mb
+            roll_keep 5
+        }
+    }
+}
+CADDYEOF
+
+# Copy widget.html into the web root so it's served at /widget.html
+cp ${REMOTE_DIR}/widget.html \${WEB_ROOT}/widget.html 2>/dev/null || true
+
+# Validate and reload
+caddy validate --config /etc/caddy/Caddyfile
+systemctl enable caddy && systemctl restart caddy
+echo "  ✓ Caddy running with automatic HTTPS"
+REMOTE_CADDY
 
 echo ""
-echo "────────────────────────────────────────────"
-echo "  ✅  Backend deployed and running!"
+echo "══════════════════════════════════════════════════"
+echo "  ✅  Deploy complete!"
 echo ""
-echo "  Test the API:"
-echo "    curl https://${DOMAIN}/api/health"
+echo "  Platform:   https://${DOMAIN}"
+echo "  Widget:     https://${DOMAIN}/widget.html"
+echo "  API health: https://${DOMAIN}/api/health"
 echo ""
-echo "  View logs:"
-echo "    ssh ${SSH_USER}@${SERVER} 'journalctl -u roserag-backend -f'"
-echo "────────────────────────────────────────────"
+echo "  Check Ollama models (pull takes a few min):"
+echo "    ssh ${SSH_USER}@${SERVER} 'docker exec roserag-ollama ollama list'"
+echo ""
+echo "  Stream backend logs:"
+echo "    ssh ${SSH_USER}@${SERVER} 'docker compose -f ${REMOTE_DIR}/docker-compose.yml logs -f backend'"
+echo "══════════════════════════════════════════════════"

@@ -1,0 +1,46 @@
+# ═══════════════════════════════════════════════════════════════
+#  ChengetAI Labs — Caddyfile
+#  Caddy handles HTTPS automatically via Let's Encrypt.
+#  Place this at /etc/caddy/Caddyfile (or pass with caddy run --config)
+#
+#  Static files:  served from /opt/roserag/platform/out
+#  API:           proxied to FastAPI backend on localhost:8000
+#  widget.html:   available at https://rag.chengetai.co.zw/widget.html
+# ═══════════════════════════════════════════════════════════════
+
+rag.chengetai.co.zw {
+
+    encode gzip
+
+    # ── API — proxy to FastAPI backend ──────────────────────────
+    handle /api/* {
+        reverse_proxy localhost:8000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            # Required for SSE streaming (POST /api/ask/stream)
+            flush_interval -1
+        }
+    }
+
+    # ── Static frontend (Next.js export + widget.html) ───────────
+    handle {
+        root * /opt/roserag/platform/out
+        # Copy widget.html into this directory during setup
+        try_files {path} {path}/index.html =404
+        file_server
+    }
+
+    # ── Long cache for hashed Next.js assets ─────────────────────
+    @static {
+        path /_next/static/*
+    }
+    header @static Cache-Control "public, max-age=31536000, immutable"
+
+    # ── Access log ────────────────────────────────────────────────
+    log {
+        output file /var/log/caddy/roserag-access.log {
+            roll_size 10mb
+            roll_keep 5
+        }
+    }
+}
