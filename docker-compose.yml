@@ -11,9 +11,10 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
-      interval: 30s
+      interval: 15s
       timeout: 10s
-      retries: 3
+      retries: 6
+      start_period: 60s
 
   # ── Redis cache ──────────────────────────────────────────────────────────────
   redis:
@@ -48,8 +49,8 @@ services:
       - REDIS_URL=redis://redis:6379
       - LLM_API_BASE=http://host.docker.internal:11434
       - LLM_API_KEY=
-      - CHAT_MODEL=llama3.2
-      - REASONER_MODEL=llama3.2
+      - CHAT_MODEL=qwen2.5:3b
+      - REASONER_MODEL=qwen2.5:3b
       - EMBED_API_BASE=http://host.docker.internal:11434
       - EMBED_API_KEY=
       - EMBED_MODEL=nomic-embed-text
@@ -57,7 +58,7 @@ services:
       - "host.docker.internal:host-gateway"
     depends_on:
       qdrant:
-        condition: service_healthy
+        condition: service_started
       redis:
         condition: service_healthy
     volumes:
