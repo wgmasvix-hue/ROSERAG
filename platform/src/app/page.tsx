@@ -290,21 +290,25 @@ export default function LandingPage() {
         </div>
 
         {mobileOpen && (
-          <div className="md:hidden bg-white border-t border-slate-200 px-6 py-4">
+          <div className="md:hidden bg-white border-t border-slate-200 px-6 py-4 shadow-lg">
             {NAV_LINKS.map((l) =>
               l.external ? (
                 <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 py-2.5 text-sm text-slate-700 font-medium">
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-1.5 py-3 text-sm text-slate-700 font-medium border-b border-slate-50 last:border-0">
                   {l.label} <ExternalLink className="w-3 h-3 text-slate-400" />
                 </a>
               ) : (
-                <Link key={l.label} href={l.href} className="block py-2.5 text-sm text-slate-700 font-medium">
+                <Link key={l.label} href={l.href}
+                  onClick={() => setMobileOpen(false)}
+                  className="block py-3 text-sm text-slate-700 font-medium border-b border-slate-50 last:border-0">
                   {l.label}
                 </Link>
               )
             )}
-            <div className="flex gap-3 pt-3 border-t border-slate-100 mt-2">
-              <Link href="/app" className="flex-1 text-center bg-rose-600 text-white text-sm font-semibold py-2.5 rounded-lg">
+            <div className="flex gap-3 pt-4 mt-1">
+              <Link href="/app" onClick={() => setMobileOpen(false)}
+                className="flex-1 text-center bg-rose-600 text-white text-sm font-semibold py-3 rounded-xl">
                 Launch Platform
               </Link>
             </div>
@@ -316,27 +320,24 @@ export default function LandingPage() {
       <section id="search">
         <div className="min-h-screen flex items-center pt-16"
           style={{ background: "linear-gradient(135deg,#0f172a 0%,#1e293b 45%,#1a0a10 100%)" }}>
-          <div className="max-w-7xl mx-auto px-6 py-24 w-full">
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-20 lg:py-24 w-full">
+            <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
               <div>
                 {/* Eyebrow */}
-                <div className="inline-flex items-center gap-2 bg-rose-500/15 border border-rose-500/25 text-rose-300 px-3.5 py-1.5 rounded-full text-xs font-semibold mb-6">
-                  <Database className="w-3.5 h-3.5" />
-                  AI Discovery Layer for DARE · dspace.dare.co.zw
+                <div className="inline-flex items-center gap-2 bg-rose-500/15 border border-rose-500/25 text-rose-300 px-3 py-1.5 rounded-full text-xs font-semibold mb-5 max-w-full overflow-hidden">
+                  <Database className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span className="truncate">AI Discovery Layer for DARE · dspace.dare.co.zw</span>
                 </div>
 
-                <h1 className="text-5xl lg:text-6xl font-black text-white leading-[1.05] mb-5">
-                  <span className="text-rose-400">ChengetAI</span>{" "}
-                  Labs
+                <h1 className="text-3xl sm:text-4xl lg:text-6xl font-black text-white leading-[1.1] mb-4 sm:mb-5">
+                  <span className="text-rose-400">ChengetAI</span>{" "}Labs
                   <br />
-                  <span className="text-3xl lg:text-4xl text-white/60 font-bold">
-                    Research Intelligence
-                    <br />
-                    Platform
+                  <span className="text-xl sm:text-2xl lg:text-4xl text-white/60 font-bold">
+                    Research Intelligence Platform
                   </span>
                 </h1>
 
-                <p className="text-base text-slate-300 leading-relaxed mb-8 max-w-lg">
+                <p className="text-sm sm:text-base text-slate-300 leading-relaxed mb-6 sm:mb-8">
                   The AI layer that sits on top of the DARE Institutional Repository.
                   Ask questions, get cited answers, build research notebooks — all powered
                   by <a href="https://dspace.dare.co.zw" target="_blank" rel="noopener noreferrer"
@@ -348,16 +349,16 @@ export default function LandingPage() {
                 {/* Search bar */}
                 <HeroSearch />
 
-                <div className="flex flex-wrap gap-5 mt-8">
+                <div className="flex flex-wrap gap-3 sm:gap-5 mt-6 sm:mt-8">
                   {["Grounded in DARE sources", "Cited answers only", "Open access"].map((t) => (
-                    <div key={t} className="flex items-center gap-1.5 text-sm text-slate-400">
-                      <CheckCircle className="w-4 h-4 text-green-400" />
+                    <div key={t} className="flex items-center gap-1.5 text-xs sm:text-sm text-slate-400">
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-400 flex-shrink-0" />
                       {t}
                     </div>
                   ))}
                 </div>
 
-                <div className="flex flex-wrap gap-3 mt-6">
+                <div className="flex flex-wrap gap-3 mt-5 sm:mt-6">
                   <Link href="/app/notebook"
                     className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/15 border border-white/15 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors">
                     <BookOpen className="w-4 h-4" />
