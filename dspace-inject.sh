@@ -10,7 +10,7 @@
 #
 #  Usage:
 #    ssh root@dspace.dare.co.zw
-#    curl -fsSL https://roserag.dare.co.zw/dspace-inject.sh | bash
+#    curl -fsSL https://rag.dare.co.zw/dspace-inject.sh | bash
 #
 #  Or manually:
 #    bash dspace-inject.sh
@@ -18,7 +18,7 @@
 
 set -e
 
-WIDGET_URL="https://roserag.dare.co.zw/widget-inject.js"
+WIDGET_URL="https://rag.dare.co.zw/widget-inject.js"
 SCRIPT_TAG='<script src="'"$WIDGET_URL"'" defer></script>'
 INJECT_LINE='sub_filter '"'"'</body>'"'"' '"'"''"$SCRIPT_TAG"'</body>'"'"';'
 ONCE_LINE='sub_filter_once on;'
@@ -87,7 +87,7 @@ fi
 ok "Found config: $CONF"
 
 # ── Already injected? ──────────────────────────────────────────
-if grep -q "roserag.dare.co.zw/widget-inject.js" "$CONF"; then
+if grep -q "rag.dare.co.zw/widget-inject.js" "$CONF"; then
   ok "Widget already injected in $CONF — nothing to do."
   echo ""
   echo "  To test: open https://dspace.dare.co.zw in your browser."

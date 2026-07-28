@@ -16,7 +16,7 @@
 set -e
 
 SERVER="34.68.70.25"
-DOMAIN="roserag.dare.co.zw"
+DOMAIN="rag.dare.co.zw"
 SSH_USER="${SSH_USER:-root}"
 SSH_PASS="${SSH_PASS:-}"        # leave blank to use SSH key auth
 REPO_URL="https://github.com/wgmasvix-hue/ROSERAG.git"

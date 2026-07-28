@@ -181,7 +181,7 @@ function DashboardPreview() {
             ))}
           </div>
           <div className="flex-1 h-5 bg-white/10 rounded-md mx-2 flex items-center px-2">
-            <span className="text-white/30 text-[9px]">roserag.dare.co.zw/app/search</span>
+            <span className="text-white/30 text-[9px]">rag.dare.co.zw/app/search</span>
           </div>
         </div>
 
@@ -646,7 +646,7 @@ export default function LandingPage() {
                     <div className="font-black text-white text-lg mb-1">
                       <span className="text-rose-400">Chenget</span>AI Labs
                     </div>
-                    <div className="text-rose-300/80 text-xs mb-3">AI Intelligence Layer · roserag.dare.co.zw</div>
+                    <div className="text-rose-300/80 text-xs mb-3">AI Intelligence Layer · rag.dare.co.zw</div>
                     <div className="flex flex-wrap justify-center gap-1.5">
                       {["AI Search", "Notebooks", "Copilot", "Knowledge Graph"].map((t) => (
                         <span key={t} className="bg-rose-500/30 text-rose-200 text-[10px] px-2 py-0.5 rounded">
