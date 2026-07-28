@@ -37,7 +37,7 @@ jobs:
         working-directory: platform
         run: npm run build
         env:
-          NEXT_PUBLIC_API_URL: https://rag.dare.co.zw
+          NEXT_PUBLIC_API_URL: https://roserag.dare.co.zw
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -113,7 +113,7 @@ jobs:
             1. Download the **debug APK** above
             2. On your Android phone, enable **Settings → Security → Unknown sources**
             3. Open the downloaded `.apk` file to install
-            4. Connect to your RoseRAG backend at `https://rag.dare.co.zw`
+            4. Connect to your RoseRAG backend at `https://roserag.dare.co.zw`
 
             ### What's inside
             - Full RoseRAG web app wrapped as a native Android app

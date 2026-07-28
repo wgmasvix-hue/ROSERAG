@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────
-#  RoseRAG — Deploy to rag.dare.co.zw
+#  RoseRAG — Deploy to roserag.dare.co.zw
 #  Run this from YOUR local machine:
 #    chmod +x deploy.sh && ./deploy.sh
 # ─────────────────────────────────────────────────────────────
@@ -8,7 +8,7 @@
 set -e
 
 SERVER="34.68.70.25"
-DOMAIN="rag.dare.co.zw"
+DOMAIN="roserag.dare.co.zw"
 SSH_USER="${SSH_USER:-wgmasvix}"
 SSH_PASS="${SSH_PASS:-Cheryl13..}"
 WEB_ROOT="/var/www/${DOMAIN}/html"   # adjust if different
@@ -44,7 +44,7 @@ WEB_ROOT=$($SSH ${SSH_USER}@${SERVER} "
     /var/www/${DOMAIN}/html \
     /var/www/${DOMAIN} \
     /home/${SSH_USER}/public_html/rag \
-    /home/${SSH_USER}/rag.dare.co.zw \
+    /home/${SSH_USER}/roserag.dare.co.zw \
     /var/www/html \
     /public_html/rag; do
     if [ -d \"\$dir\" ]; then echo \"\$dir\"; break; fi

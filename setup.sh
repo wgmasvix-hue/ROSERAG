@@ -7,7 +7,7 @@
 
 set -e
 REPO=/opt/roserag
-DOMAIN=rag.dare.co.zw
+DOMAIN=roserag.dare.co.zw
 WEB_ROOT=$REPO/platform/out
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'
@@ -145,11 +145,6 @@ mkdir -p /var/log/caddy
 
 # Write Caddyfile
 cat > /etc/caddy/Caddyfile << CADDYEOF
-# Redirect old domain to new
-roserag.dare.co.zw {
-    redir https://$DOMAIN{uri} permanent
-}
-
 $DOMAIN {
 
     encode gzip
