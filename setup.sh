@@ -145,12 +145,17 @@ mkdir -p /var/log/caddy
 
 # Write Caddyfile
 cat > /etc/caddy/Caddyfile << CADDYEOF
+# Redirect old domain to new
+roserag.dare.co.zw {
+    redir https://$DOMAIN{uri} permanent
+}
+
 $DOMAIN {
 
     encode gzip
 
     handle /api/* {
-        reverse_proxy localhost:8000 {
+        reverse_proxy localhost:8002 {
             header_up Host {host}
             header_up X-Real-IP {remote_host}
             flush_interval -1

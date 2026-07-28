@@ -4,9 +4,14 @@
 #  Place this at /etc/caddy/Caddyfile (or pass with caddy run --config)
 #
 #  Static files:  served from /opt/roserag/platform/out
-#  API:           proxied to FastAPI backend on localhost:8000
+#  API:           proxied to FastAPI backend on localhost:8002
 #  widget.html:   available at https://rag.dare.co.zw/widget.html
 # ═══════════════════════════════════════════════════════════════
+
+# Redirect old domain to new
+roserag.dare.co.zw {
+    redir https://rag.dare.co.zw{uri} permanent
+}
 
 rag.dare.co.zw {
 
