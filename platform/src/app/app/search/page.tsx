@@ -361,7 +361,7 @@ export default function SearchPage() {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <div className="p-6 space-y-5">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-5">
           {/* Page header */}
           <div>
             <h2 className="text-2xl font-black text-slate-900">Search</h2>
@@ -396,7 +396,7 @@ export default function SearchPage() {
           </div>
 
           {/* Mode tabs + filter chips */}
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3">
             <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-1">
               {MODES.map(({ key, label, icon: Icon }) => (
                 <button

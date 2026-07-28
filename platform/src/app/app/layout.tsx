@@ -197,7 +197,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       )}
 
       {/* Mobile sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 md:hidden transform transition-transform duration-300 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      <div className={`fixed inset-y-0 left-0 z-50 md:hidden transform transition-transform duration-300 w-72 max-w-[85vw] ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <Sidebar collapsed={false} onToggle={() => setMobileOpen(false)} />
       </div>
 
