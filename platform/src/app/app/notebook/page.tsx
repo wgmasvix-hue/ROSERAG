@@ -474,6 +474,7 @@ export default function NotebookPage() {
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [audioPlaying, setAudioPlaying] = useState(false);
   const [showDSpaceModal, setShowDSpaceModal] = useState(false);
+  const [mobileTab, setMobileTab] = useState<"chat" | "sources" | "notes">("chat");
 
   const addMenuRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -557,7 +558,7 @@ export default function NotebookPage() {
 
   if (!selectedNotebook || !currentNotebook) {
     return (
-      <div className="min-h-screen bg-slate-950 p-8">
+      <div className="min-h-screen bg-slate-950 p-4 sm:p-6 lg:p-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -632,18 +633,33 @@ export default function NotebookPage() {
   const followUps = FOLLOW_UPS[currentNotebook.id] ?? DEFAULT_FOLLOW_UPS;
 
   return (
-    <div className="flex h-screen bg-slate-950 overflow-hidden">
+    <div className="flex flex-col lg:flex-row h-[calc(100vh-3.5rem)] lg:h-screen bg-slate-950 overflow-hidden">
+      {/* ── Mobile Header ──────────────────────────────────────────────── */}
+      <div className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-slate-800 flex-shrink-0 bg-slate-900">
+        <button
+          onClick={() => setSelectedNotebook(null)}
+          className="text-slate-400 hover:text-white transition-colors"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+        <span className="text-white font-semibold flex-1 truncate text-sm">{currentNotebook.title}</span>
+        <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium flex-shrink-0 ${getBadgeClasses(currentNotebook.color)}`}>
+          {currentNotebook.type}
+        </span>
+      </div>
+
       {/* ── Left Panel: Sources ──────────────────────────────────────────── */}
       <div
-        className="bg-slate-900 border-r border-slate-800 flex flex-col flex-shrink-0"
-        style={{ width: "280px" }}
+        className={`bg-slate-900 flex-shrink-0 border-slate-800 lg:border-r lg:w-[280px] ${
+          mobileTab === "sources" ? "flex flex-col flex-1 overflow-hidden" : "hidden lg:flex lg:flex-col"
+        }`}
       >
         {/* Header */}
         <div className="p-4 border-b border-slate-800">
           <div className="flex items-center gap-2">
             <button
               onClick={() => setSelectedNotebook(null)}
-              className="text-slate-400 hover:text-white transition-colors"
+              className="hidden lg:block text-slate-400 hover:text-white transition-colors"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
@@ -746,7 +762,9 @@ export default function NotebookPage() {
       </div>
 
       {/* ── Center Panel: Canvas ──────────────────────────────────────────── */}
-      <div className="bg-slate-950 flex flex-col overflow-hidden flex-1 min-w-0">
+      <div className={`bg-slate-950 overflow-hidden flex-1 min-w-0 ${
+        mobileTab === "notes" ? "flex flex-col" : "hidden lg:flex lg:flex-col"
+      }`}>
         {/* Toolbar */}
         <div className="border-b border-slate-800 px-6 py-3 flex items-center gap-1 flex-shrink-0">
           <input
@@ -846,8 +864,9 @@ export default function NotebookPage() {
 
       {/* ── Right Panel: Chat ─────────────────────────────────────────────── */}
       <div
-        className="bg-slate-900 border-l border-slate-800 flex flex-col flex-shrink-0"
-        style={{ width: "380px" }}
+        className={`bg-slate-900 flex-shrink-0 border-slate-800 lg:border-l lg:w-[380px] ${
+          mobileTab === "chat" ? "flex flex-col flex-1 overflow-hidden" : "hidden lg:flex lg:flex-col"
+        }`}
       >
         {/* Header */}
         <div className="p-4 border-b border-slate-800 flex items-center justify-between">
@@ -964,6 +983,29 @@ export default function NotebookPage() {
           </div>
         </div>
       </div>
+      {/* ── Mobile Tab Bar ───────────────────────────────────────────────── */}
+      <div className="lg:hidden flex-shrink-0 flex border-t border-slate-800 bg-slate-900">
+        {(["chat", "sources", "notes"] as const).map((tab) => {
+          const config = {
+            chat: { label: "Chat", icon: MessageSquare },
+            sources: { label: "Sources", icon: Database },
+            notes: { label: "Notes", icon: FileText },
+          }[tab];
+          return (
+            <button
+              key={tab}
+              onClick={() => setMobileTab(tab)}
+              className={`flex-1 py-2.5 flex flex-col items-center gap-0.5 transition-colors ${
+                mobileTab === tab ? "text-rose-400" : "text-slate-500 hover:text-slate-300"
+              }`}
+            >
+              <config.icon className="w-4 h-4" />
+              <span className="text-[10px] font-medium">{config.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
       {showDSpaceModal && selectedNotebook && (
         <DSpaceModal
           notebookId={selectedNotebook}
