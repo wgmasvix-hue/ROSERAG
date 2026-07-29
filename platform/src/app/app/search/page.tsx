@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, Suspense } from "react";
 import {
   Search, Filter, X, ChevronDown, BookOpen, Plus, ExternalLink,
   FileText, Globe, Database, FileSpreadsheet, Calendar, User, Building2,
@@ -239,7 +239,7 @@ function FilterChip({ label, active, onToggle }: { label: string; active: boolea
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function SearchPage() {
+function SearchPageInner() {
   const searchParams = useSearchParams();
   const initialQ = searchParams?.get("q") ?? "";
 
@@ -516,5 +516,20 @@ export default function SearchPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center h-full bg-slate-950">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 rounded-full border-2 border-rose-500 border-t-transparent animate-spin" />
+          <p className="text-slate-500 text-sm">Loading search…</p>
+        </div>
+      </div>
+    }>
+      <SearchPageInner />
+    </Suspense>
   );
 }

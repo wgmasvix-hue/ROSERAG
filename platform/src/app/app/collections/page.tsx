@@ -103,11 +103,11 @@ const INITIAL_COLLECTIONS: Collection[] = [
 ];
 
 const COLOR_OPTIONS: { key: CollectionColor; bg: string; icon: string; border: string }[] = [
-  { key: "rose",   bg: "bg-rose-50",   icon: "text-rose-600",   border: "border-rose-400" },
-  { key: "blue",   bg: "bg-blue-50",   icon: "text-blue-600",   border: "border-blue-400" },
-  { key: "green",  bg: "bg-green-50",  icon: "text-green-600",  border: "border-green-400" },
-  { key: "purple", bg: "bg-purple-50", icon: "text-purple-600", border: "border-purple-400" },
-  { key: "amber",  bg: "bg-amber-50",  icon: "text-amber-600",  border: "border-amber-400" },
+  { key: "rose",   bg: "bg-rose-500/15",   icon: "text-rose-400",   border: "border-rose-500" },
+  { key: "blue",   bg: "bg-blue-500/15",   icon: "text-blue-400",   border: "border-blue-500" },
+  { key: "green",  bg: "bg-green-500/15",  icon: "text-green-400",  border: "border-green-500" },
+  { key: "purple", bg: "bg-purple-500/15", icon: "text-purple-400", border: "border-purple-500" },
+  { key: "amber",  bg: "bg-amber-500/15",  icon: "text-amber-400",  border: "border-amber-500" },
 ];
 
 const DOC_TYPE_LABELS: Record<string, string> = {
@@ -137,26 +137,26 @@ function CollectionCard({
   return (
     <div
       onClick={onOpen}
-      className="card-hover p-5 flex flex-col gap-3 group relative cursor-pointer"
+      className="bg-slate-900 border border-slate-800 rounded-xl hover:border-rose-500/30 transition-colors p-5 flex flex-col gap-3 group relative cursor-pointer"
     >
       {/* Menu button */}
       <button
         onClick={(e) => { e.stopPropagation(); setMenuOpen((p) => !p); }}
-        className="absolute top-3 right-3 p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+        className="absolute top-3 right-3 p-1.5 rounded-lg text-slate-500 hover:bg-slate-800 hover:text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity z-10"
       >
         <MoreHorizontal className="w-4 h-4" />
       </button>
       {menuOpen && (
         <div
-          className="absolute top-10 right-3 bg-white border border-slate-200 rounded-xl shadow-lg z-20 py-1 min-w-[140px]"
+          className="absolute top-10 right-3 bg-slate-800 border border-slate-700 rounded-xl shadow-xl z-20 py-1 min-w-[140px]"
           onClick={(e) => e.stopPropagation()}
         >
-          <button className="flex items-center gap-2 w-full px-3 py-2 text-sm text-slate-600 hover:bg-slate-50">
+          <button className="flex items-center gap-2 w-full px-3 py-2 text-sm text-slate-300 hover:bg-slate-700">
             <Edit3 className="w-3.5 h-3.5" /> Rename
           </button>
           <button
             onClick={() => { onDelete(); setMenuOpen(false); }}
-            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-400 hover:bg-red-500/15"
           >
             <Trash2 className="w-3.5 h-3.5" /> Delete
           </button>
@@ -169,14 +169,14 @@ function CollectionCard({
           <Folder className={`w-5 h-5 ${icon}`} />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-slate-900 text-sm truncate">{collection.name}</h3>
+          <h3 className="font-bold text-white text-sm truncate">{collection.name}</h3>
           <p className="text-xs text-slate-400">{collection.documentCount} documents</p>
         </div>
-        <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors flex-shrink-0" />
+        <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-colors flex-shrink-0" />
       </div>
 
       {/* Description */}
-      <p className="text-xs text-slate-500 leading-relaxed line-clamp-2">{collection.description}</p>
+      <p className="text-xs text-slate-400 leading-relaxed line-clamp-2">{collection.description}</p>
 
       {/* Tags */}
       <div className="flex flex-wrap gap-1.5 mt-auto">
@@ -187,7 +187,7 @@ function CollectionCard({
         ))}
       </div>
 
-      <div className="text-xs text-slate-300 pt-1 border-t border-slate-100">
+      <div className="text-xs text-slate-600 pt-1 border-t border-slate-800">
         Created {new Date(collection.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
       </div>
     </div>
@@ -212,16 +212,16 @@ function NewCollectionForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="card p-5 border-2 border-rose-200 space-y-4">
+    <form onSubmit={handleSubmit} className="bg-slate-900 border-2 border-rose-500/40 rounded-xl p-5 space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="font-bold text-slate-800 text-sm">New Collection</h3>
-        <button type="button" onClick={onCancel} className="text-slate-400 hover:text-slate-600">
+        <h3 className="font-bold text-white text-sm">New Collection</h3>
+        <button type="button" onClick={onCancel} className="text-slate-500 hover:text-slate-300">
           <X className="w-4 h-4" />
         </button>
       </div>
 
       <div>
-        <label className="block text-xs font-semibold text-slate-600 mb-1">Name</label>
+        <label className="block text-xs font-semibold text-slate-400 mb-1">Name</label>
         <input
           className="input text-sm"
           placeholder="e.g. Food Security Research"
@@ -233,7 +233,7 @@ function NewCollectionForm({
       </div>
 
       <div>
-        <label className="block text-xs font-semibold text-slate-600 mb-1">Description</label>
+        <label className="block text-xs font-semibold text-slate-400 mb-1">Description</label>
         <textarea
           className="input text-sm resize-none"
           rows={2}
@@ -245,7 +245,7 @@ function NewCollectionForm({
       </div>
 
       <div>
-        <label className="block text-xs font-semibold text-slate-600 mb-2">Color</label>
+        <label className="block text-xs font-semibold text-slate-400 mb-2">Color</label>
         <div className="flex gap-2">
           {COLOR_OPTIONS.map((c) => (
             <button
@@ -290,11 +290,11 @@ function AddDocumentModal({
   );
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="card w-full max-w-md p-5 space-y-4">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-slate-900 border border-slate-800 rounded-xl w-full max-w-md p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-bold text-slate-900">Add Documents to "{collection.name}"</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+          <h3 className="font-bold text-white">Add Documents to "{collection.name}"</h3>
+          <button onClick={onClose} className="text-slate-500 hover:text-slate-300">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -312,19 +312,19 @@ function AddDocumentModal({
 
         <div className="space-y-2 max-h-64 overflow-y-auto">
           {filtered.length === 0 && (
-            <p className="text-sm text-slate-400 text-center py-6">No documents available to add.</p>
+            <p className="text-sm text-slate-500 text-center py-6">No documents available to add.</p>
           )}
           {filtered.map((doc) => (
             <div
               key={doc.id}
-              className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:border-rose-200 hover:bg-rose-50/30 transition-colors group"
+              className="flex items-center gap-3 p-3 rounded-lg border border-slate-700 hover:border-rose-500/30 hover:bg-rose-500/10 transition-colors group"
             >
-              <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
-                <FileText className="w-4 h-4 text-slate-500" />
+              <div className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center flex-shrink-0">
+                <FileText className="w-4 h-4 text-slate-400" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-slate-800 truncate">{doc.title}</p>
-                <p className="text-xs text-slate-400">{DOC_TYPE_LABELS[doc.type]}</p>
+                <p className="text-sm font-medium text-slate-200 truncate">{doc.title}</p>
+                <p className="text-xs text-slate-500">{DOC_TYPE_LABELS[doc.type]}</p>
               </div>
               <button
                 onClick={() => onAdd(doc.id)}
@@ -336,7 +336,7 @@ function AddDocumentModal({
           ))}
         </div>
 
-        <div className="pt-1 border-t border-slate-100">
+        <div className="pt-1 border-t border-slate-800">
           <button onClick={onClose} className="btn-secondary w-full justify-center text-sm">
             Done
           </button>
@@ -370,8 +370,8 @@ function CollectionDetail({
           <Folder className={`w-5 h-5 ${icon}`} />
         </div>
         <div className="flex-1 min-w-0">
-          <h2 className="text-xl font-black text-slate-900">{collection.name}</h2>
-          <p className="text-sm text-slate-500">{collection.description}</p>
+          <h2 className="text-xl font-black text-white">{collection.name}</h2>
+          <p className="text-sm text-slate-400">{collection.description}</p>
         </div>
         <button onClick={onAddDocument} className="btn-primary text-sm">
           <Plus className="w-4 h-4" /> Add Documents
@@ -390,12 +390,12 @@ function CollectionDetail({
       {/* Documents */}
       {collection.documents.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center">
-            <BookOpen className="w-7 h-7 text-slate-400" />
+          <div className="w-14 h-14 rounded-2xl bg-slate-800 flex items-center justify-center">
+            <BookOpen className="w-7 h-7 text-slate-500" />
           </div>
           <div>
-            <h3 className="font-bold text-slate-700">No documents yet</h3>
-            <p className="text-sm text-slate-400 mt-1">Add documents to this collection to get started.</p>
+            <h3 className="font-bold text-slate-300">No documents yet</h3>
+            <p className="text-sm text-slate-500 mt-1">Add documents to this collection to get started.</p>
           </div>
           <button onClick={onAddDocument} className="btn-primary text-sm mt-1">
             <Plus className="w-4 h-4" /> Add Documents
@@ -404,20 +404,20 @@ function CollectionDetail({
       ) : (
         <div className="space-y-2">
           {collection.documents.map((doc) => (
-            <div key={doc.id} className="card p-4 flex items-center gap-3 group hover:border-rose-200 transition-colors">
-              <div className="w-9 h-9 rounded-lg bg-rose-50 flex items-center justify-center flex-shrink-0">
-                <FileText className="w-4 h-4 text-rose-600" />
+            <div key={doc.id} className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center gap-3 group hover:border-rose-500/30 transition-colors">
+              <div className="w-9 h-9 rounded-lg bg-rose-500/15 flex items-center justify-center flex-shrink-0">
+                <FileText className="w-4 h-4 text-rose-400" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-slate-800 truncate">{doc.title}</p>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-sm font-semibold text-slate-200 truncate">{doc.title}</p>
+                <p className="text-xs text-slate-500 mt-0.5">
                   {DOC_TYPE_LABELS[doc.type]} · Added{" "}
                   {new Date(doc.addedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
                 </p>
               </div>
               <button
                 onClick={() => onRemoveDocument(doc.id)}
-                className="text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-50"
+                className="text-slate-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-500/10"
                 title="Remove from collection"
               >
                 <X className="w-4 h-4" />
@@ -508,8 +508,8 @@ export default function CollectionsPage() {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-black text-slate-900">Collections</h2>
-              <p className="text-sm text-slate-500 mt-1">Organise your documents into curated research collections.</p>
+              <h2 className="text-2xl font-black text-white">Collections</h2>
+              <p className="text-sm text-slate-400 mt-1">Organise your documents into curated research collections.</p>
             </div>
             <button onClick={() => { setShowNewForm((p) => !p); }} className="btn-primary">
               <Plus className="w-4 h-4" /> New Collection
@@ -535,10 +535,10 @@ export default function CollectionsPage() {
           {/* Stats row */}
           <div className="flex items-center gap-6 text-sm text-slate-500">
             <span>
-              <span className="font-bold text-slate-900">{collections.length}</span> collections
+              <span className="font-bold text-white">{collections.length}</span> collections
             </span>
             <span>
-              <span className="font-bold text-slate-900">
+              <span className="font-bold text-white">
                 {collections.reduce((a, c) => a + c.documentCount, 0)}
               </span>{" "}
               total documents
@@ -548,12 +548,12 @@ export default function CollectionsPage() {
           {/* Grid */}
           {filteredCollections.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
-              <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center">
-                <Layers className="w-7 h-7 text-slate-400" />
+              <div className="w-14 h-14 rounded-2xl bg-slate-800 flex items-center justify-center">
+                <Layers className="w-7 h-7 text-slate-500" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-700">No collections found</h3>
-                <p className="text-sm text-slate-400 mt-1">Try a different search or create a new collection.</p>
+                <h3 className="font-bold text-slate-300">No collections found</h3>
+                <p className="text-sm text-slate-500 mt-1">Try a different search or create a new collection.</p>
               </div>
               <button onClick={() => setShowNewForm(true)} className="btn-primary text-sm mt-1">
                 <Plus className="w-4 h-4" /> New Collection

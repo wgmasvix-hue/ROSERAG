@@ -119,10 +119,10 @@ function KnowledgeGraphSVG({
             <g key={i}>
               <line
                 x1={src.x} y1={src.y} x2={tgt.x} y2={tgt.y}
-                stroke="#e2e8f0" strokeWidth={edge.weight} strokeLinecap="round"
+                stroke="#334155" strokeWidth={edge.weight} strokeLinecap="round"
               />
               <text x={mid.x} y={mid.y} textAnchor="middle" className="text-[8px]"
-                fontSize="9" fill="#94a3b8" dy="-4">
+                fontSize="9" fill="#475569" dy="-4">
                 {edge.label}
               </text>
             </g>
@@ -137,9 +137,9 @@ function KnowledgeGraphSVG({
             <g key={node.id} onClick={() => onSelect(node.id)} className="cursor-pointer">
               <circle
                 cx={node.x} cy={node.y} r={r}
-                fill={isSelected ? node.color : `${node.color}20`}
+                fill={isSelected ? node.color : `${node.color}25`}
                 stroke={node.color}
-                strokeWidth={isSelected ? 3 : 2}
+                strokeWidth={isSelected ? 3 : 1.5}
                 className="transition-all duration-200"
               />
               {isSelected && (
@@ -152,7 +152,7 @@ function KnowledgeGraphSVG({
                 textAnchor="middle"
                 fontSize="11"
                 fontWeight={isSelected ? "700" : "500"}
-                fill={isSelected ? node.color : "#334155"}
+                fill={isSelected ? node.color : "#94a3b8"}
               >
                 {node.label}
               </text>
@@ -189,7 +189,7 @@ export default function GraphPage() {
   return (
     <div className="h-full flex overflow-hidden">
       {/* Main graph area */}
-      <div className="flex-1 relative bg-slate-50">
+      <div className="flex-1 relative bg-slate-950">
         {/* Toolbar */}
         <div className="absolute top-4 left-4 right-4 z-10 flex items-center gap-3">
           <div className="flex-1 max-w-sm relative">
@@ -202,7 +202,7 @@ export default function GraphPage() {
             />
           </div>
 
-          <div className="flex gap-1 bg-white border border-slate-200 rounded-lg p-1 shadow-sm">
+          <div className="flex gap-1 bg-slate-900 border border-slate-800 rounded-lg p-1">
             {[null, "concept", "entity", "document", "institution"].map((t) => (
               <button
                 key={t ?? "all"}
@@ -210,7 +210,7 @@ export default function GraphPage() {
                 className={`px-2.5 py-1 rounded text-xs font-medium transition-all ${
                   typeFilter === t
                     ? "bg-rose-600 text-white"
-                    : "text-slate-600 hover:bg-slate-100"
+                    : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
                 }`}
               >
                 {t ? t.charAt(0).toUpperCase() + t.slice(1) : "All"}
@@ -221,25 +221,25 @@ export default function GraphPage() {
 
         {/* Zoom controls */}
         <div className="absolute bottom-6 left-4 z-10 flex flex-col gap-2">
-          <button className="w-8 h-8 bg-white border border-slate-200 rounded-lg shadow-sm flex items-center justify-center hover:bg-slate-50 text-slate-600">
+          <button className="w-8 h-8 bg-slate-900 border border-slate-800 rounded-lg flex items-center justify-center hover:bg-slate-800 text-slate-400 transition-colors">
             <ZoomIn className="w-4 h-4" />
           </button>
-          <button className="w-8 h-8 bg-white border border-slate-200 rounded-lg shadow-sm flex items-center justify-center hover:bg-slate-50 text-slate-600">
+          <button className="w-8 h-8 bg-slate-900 border border-slate-800 rounded-lg flex items-center justify-center hover:bg-slate-800 text-slate-400 transition-colors">
             <ZoomOut className="w-4 h-4" />
           </button>
-          <button className="w-8 h-8 bg-white border border-slate-200 rounded-lg shadow-sm flex items-center justify-center hover:bg-slate-50 text-slate-600">
+          <button className="w-8 h-8 bg-slate-900 border border-slate-800 rounded-lg flex items-center justify-center hover:bg-slate-800 text-slate-400 transition-colors">
             <Maximize2 className="w-4 h-4" />
           </button>
         </div>
 
         {/* Graph legend */}
-        <div className="absolute bottom-6 right-4 z-10 bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
-          <div className="text-xs font-semibold text-slate-500 mb-2">Node Types</div>
+        <div className="absolute bottom-6 right-4 z-10 bg-slate-900 border border-slate-800 rounded-xl p-3">
+          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Node Types</div>
           <div className="space-y-1.5">
             {Object.entries(TYPE_COLORS).map(([type, color]) => (
               <div key={type} className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full" style={{ background: color }} />
-                <span className="text-xs text-slate-600 capitalize">{type}</span>
+                <span className="text-xs text-slate-400 capitalize">{type}</span>
               </div>
             ))}
           </div>
@@ -257,17 +257,17 @@ export default function GraphPage() {
       </div>
 
       {/* Right panel */}
-      <div className="w-72 border-l border-slate-200 bg-white flex flex-col overflow-hidden">
+      <div className="w-72 border-l border-slate-800 bg-slate-900 flex flex-col overflow-hidden">
         {/* Selected node detail */}
         {selectedNode ? (
-          <div className="p-4 border-b border-slate-200">
+          <div className="p-4 border-b border-slate-800">
             <div className="flex items-start gap-3 mb-3">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white flex-shrink-0"
                 style={{ background: selectedNode.color }}>
                 <GitBranch className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900">{selectedNode.label}</h3>
+                <h3 className="font-bold text-white">{selectedNode.label}</h3>
                 <span className="badge badge-rose capitalize">{selectedNode.type}</span>
               </div>
             </div>
@@ -281,27 +281,27 @@ export default function GraphPage() {
                 const other = NODES.find((n) => n.id === (e.source === selected ? e.target : e.source));
                 if (!other) return null;
                 return (
-                  <div key={i} className="flex items-center gap-2 text-xs p-2 bg-slate-50 rounded-lg">
+                  <div key={i} className="flex items-center gap-2 text-xs p-2 bg-slate-800 rounded-lg">
                     <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: other.color }} />
-                    <span className="text-slate-400">{e.label}</span>
-                    <span className="font-medium text-slate-700 truncate">{other.label}</span>
+                    <span className="text-slate-500">{e.label}</span>
+                    <span className="font-medium text-slate-200 truncate">{other.label}</span>
                   </div>
                 );
               })}
             </div>
           </div>
         ) : (
-          <div className="p-4 border-b border-slate-200">
+          <div className="p-4 border-b border-slate-800">
             <div className="text-center py-4">
-              <GitBranch className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-              <p className="text-xs text-slate-400">Click a node to explore connections</p>
+              <GitBranch className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+              <p className="text-xs text-slate-500">Click a node to explore connections</p>
             </div>
           </div>
         )}
 
         {/* Entity Explorer */}
         <div className="flex-1 overflow-y-auto p-4">
-          <div className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">
+          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">
             Entity Explorer
           </div>
           <div className="space-y-2">
@@ -312,15 +312,15 @@ export default function GraphPage() {
                   const node = NODES.find((n) => n.label === e.label);
                   if (node) setSelected(node.id);
                 }}
-                className="w-full text-left p-3 rounded-lg border border-slate-200 hover:border-rose-200 hover:bg-rose-50 transition-all group"
+                className="w-full text-left p-3 rounded-lg border border-slate-800 hover:border-rose-500/30 hover:bg-rose-500/10 transition-all group"
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-slate-900 group-hover:text-rose-700">
+                  <span className="text-sm font-medium text-white group-hover:text-rose-400 transition-colors">
                     {e.label}
                   </span>
                   <span className="badge badge-rose capitalize text-[10px]">{e.type}</span>
                 </div>
-                <div className="flex gap-3 text-xs text-slate-400">
+                <div className="flex gap-3 text-xs text-slate-500">
                   <span>{e.connections} connections</span>
                   <span>{e.docs} docs</span>
                 </div>
