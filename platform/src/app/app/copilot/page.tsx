@@ -15,7 +15,6 @@ interface Copilot {
   icon: React.ElementType;
   tagline: string;
   description: string;
-  color: string;
   badgeClass: string;
   capabilities: string[];
   systemPrompt: string;
@@ -30,7 +29,6 @@ const COPILOTS: Copilot[] = [
     tagline: "Student Assistant",
     description:
       "DARA helps students understand complex academic material in simple, friendly language. Perfect for homework, study guides, and concept clarification.",
-    color: "from-blue-50 to-indigo-50 border-blue-200",
     badgeClass: "badge-blue",
     capabilities: [
       "Explains concepts in plain language",
@@ -50,7 +48,6 @@ const COPILOTS: Copilot[] = [
     tagline: "Educator Copilot",
     description:
       "Assists educators with curriculum design, lesson planning, assessment creation, and pedagogical strategies backed by institutional resources.",
-    color: "from-green-50 to-emerald-50 border-green-200",
     badgeClass: "badge-green",
     capabilities: [
       "Lesson plan generation",
@@ -70,7 +67,6 @@ const COPILOTS: Copilot[] = [
     tagline: "Academic Research Assistant",
     description:
       "Provides rigorous academic support with proper citations, literature review assistance, methodology guidance, and statistical interpretation.",
-    color: "from-purple-50 to-violet-50 border-purple-200",
     badgeClass: "badge-purple",
     capabilities: [
       "Literature review synthesis",
@@ -90,7 +86,6 @@ const COPILOTS: Copilot[] = [
     tagline: "Knowledge Discovery Agent",
     description:
       "Helps users navigate the institutional knowledge base, discover relevant documents, manage collections, and find authoritative sources fast.",
-    color: "from-amber-50 to-yellow-50 border-amber-200",
     badgeClass: "badge-amber",
     capabilities: [
       "Document discovery & search",
@@ -110,7 +105,6 @@ const COPILOTS: Copilot[] = [
     tagline: "Policy & Admin Assistant",
     description:
       "Supports institutional decision-making with policy analysis, compliance checking, strategic document synthesis, and administrative guidance.",
-    color: "from-rose-50 to-pink-50 border-rose-200",
     badgeClass: "badge-rose",
     capabilities: [
       "Policy analysis & summarization",
@@ -247,20 +241,20 @@ function ChatInterface({ copilot, onClose }: { copilot: Copilot; onClose: () => 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-white">
+    <div className="fixed inset-0 z-50 flex flex-col bg-slate-950">
       {/* Header */}
-      <div className="flex items-center gap-3 px-5 py-3.5 border-b border-slate-200 bg-white">
-        <div className="w-9 h-9 rounded-xl bg-rose-50 flex items-center justify-center text-xl">
+      <div className="flex items-center gap-3 px-5 py-3.5 border-b border-slate-800 bg-slate-900">
+        <div className="w-9 h-9 rounded-xl bg-rose-500/15 flex items-center justify-center text-xl">
           {copilot.emoji}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="font-bold text-slate-900 text-sm">{copilot.name} Copilot</div>
-          <div className="text-xs text-slate-500">{copilot.tagline}</div>
+          <div className="font-bold text-white text-sm">{copilot.name} Copilot</div>
+          <div className="text-xs text-slate-400">{copilot.tagline}</div>
         </div>
         <button onClick={reset} className="btn-secondary text-xs py-1.5 px-3 gap-1.5">
           <RotateCcw className="w-3.5 h-3.5" /> Reset
         </button>
-        <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-500 transition-colors">
+        <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-slate-800 flex items-center justify-center text-slate-400 transition-colors">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -270,14 +264,14 @@ function ChatInterface({ copilot, onClose }: { copilot: Copilot; onClose: () => 
         {messages.map((msg) => (
           <div key={msg.id} className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
             {msg.role === "assistant" && (
-              <div className="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center flex-shrink-0 text-base">
+              <div className="w-8 h-8 rounded-full bg-rose-500/15 flex items-center justify-center flex-shrink-0 text-base">
                 {copilot.emoji}
               </div>
             )}
             <div className={`group relative max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed
               ${msg.role === "user"
                 ? "bg-rose-600 text-white rounded-tr-none"
-                : "bg-slate-50 text-slate-800 border border-slate-100 rounded-tl-none"
+                : "bg-slate-800 text-slate-200 border border-slate-700 rounded-tl-none"
               }`}
             >
               <div className={`prose-rr ${msg.streaming ? "streaming-cursor" : ""}`}
@@ -286,9 +280,9 @@ function ChatInterface({ copilot, onClose }: { copilot: Copilot; onClose: () => 
               {msg.role === "assistant" && !msg.streaming && msg.content && (
                 <button
                   onClick={() => handleCopy(msg.id, msg.content)}
-                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-700"
+                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded bg-slate-700 border border-slate-600 flex items-center justify-center text-slate-400 hover:text-slate-200"
                 >
-                  {copied === msg.id ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+                  {copied === msg.id ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
                 </button>
               )}
             </div>
@@ -298,7 +292,7 @@ function ChatInterface({ copilot, onClose }: { copilot: Copilot; onClose: () => 
       </div>
 
       {/* Input */}
-      <div className="px-4 py-3 border-t border-slate-200 bg-white">
+      <div className="px-4 py-3 border-t border-slate-800 bg-slate-900">
         <div className="flex gap-2 items-end max-w-4xl mx-auto">
           <textarea
             ref={inputRef}
@@ -318,7 +312,7 @@ function ChatInterface({ copilot, onClose }: { copilot: Copilot; onClose: () => 
             <Send className="w-4 h-4" />
           </button>
         </div>
-        <p className="text-center text-xs text-slate-400 mt-2">
+        <p className="text-center text-xs text-slate-500 mt-2">
           Shift+Enter for new line · Responses are grounded in your institutional knowledge base
         </p>
       </div>
@@ -330,23 +324,23 @@ function ChatInterface({ copilot, onClose }: { copilot: Copilot; onClose: () => 
 
 function AgentCard({ copilot, onLaunch }: { copilot: Copilot; onLaunch: () => void }) {
   return (
-    <div className={`card-hover p-5 flex flex-col gap-4 border bg-gradient-to-br ${copilot.color}`}>
+    <div className="bg-slate-900 border border-slate-800 rounded-xl hover:border-rose-500/30 transition-colors p-5 flex flex-col gap-4 cursor-pointer">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <div className="text-3xl">{copilot.emoji}</div>
           <div>
-            <h3 className="font-bold text-slate-900">{copilot.name}</h3>
+            <h3 className="font-bold text-white">{copilot.name}</h3>
             <span className={`badge ${copilot.badgeClass} mt-0.5`}>{copilot.tagline}</span>
           </div>
         </div>
-        <copilot.icon className="w-5 h-5 text-slate-400 flex-shrink-0" />
+        <copilot.icon className="w-5 h-5 text-slate-500 flex-shrink-0" />
       </div>
 
-      <p className="text-sm text-slate-600 leading-relaxed">{copilot.description}</p>
+      <p className="text-sm text-slate-300 leading-relaxed">{copilot.description}</p>
 
       <ul className="space-y-1.5">
         {copilot.capabilities.map((cap) => (
-          <li key={cap} className="flex items-center gap-2 text-xs text-slate-600">
+          <li key={cap} className="flex items-center gap-2 text-xs text-slate-400">
             <ChevronRight className="w-3 h-3 text-rose-500 flex-shrink-0" />
             {cap}
           </li>
@@ -370,11 +364,11 @@ export default function CopilotPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-2xl font-black text-slate-900 flex items-center gap-2">
+          <h2 className="text-2xl font-black text-white flex items-center gap-2">
             <Bot className="w-7 h-7 text-rose-500" />
             AI Copilot System
           </h2>
-          <p className="text-slate-500 text-sm mt-1">
+          <p className="text-slate-400 text-sm mt-1">
             Five specialized agents grounded in your institutional knowledge base. Pick one to start.
           </p>
         </div>
@@ -388,13 +382,13 @@ export default function CopilotPage() {
         ))}
 
         {/* Info card */}
-        <div className="card p-5 flex flex-col justify-center items-center text-center gap-3 border-dashed border-2 border-slate-200 bg-slate-50">
-          <div className="w-12 h-12 rounded-2xl bg-rose-50 flex items-center justify-center">
-            <Sparkles className="w-6 h-6 text-rose-500" />
+        <div className="bg-slate-900 border-2 border-dashed border-slate-700 rounded-xl p-5 flex flex-col justify-center items-center text-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-rose-500/15 flex items-center justify-center">
+            <Sparkles className="w-6 h-6 text-rose-400" />
           </div>
           <div>
-            <h3 className="font-bold text-slate-900 mb-1">Knowledge-Grounded</h3>
-            <p className="text-sm text-slate-500">
+            <h3 className="font-bold text-white mb-1">Knowledge-Grounded</h3>
+            <p className="text-sm text-slate-400">
               All copilots retrieve answers from your verified institutional documents with citations and trust scores.
             </p>
           </div>

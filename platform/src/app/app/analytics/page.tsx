@@ -85,7 +85,7 @@ const STAT_CARDS = [
     delta: "+89 today",
     positive: true,
     icon: MessageSquare,
-    color: "bg-rose-50 text-rose-600",
+    color: "bg-rose-500/15 text-rose-400",
   },
   {
     title: "Documents Processed",
@@ -93,7 +93,7 @@ const STAT_CARDS = [
     delta: "+234 this week",
     positive: true,
     icon: FileText,
-    color: "bg-blue-50 text-blue-600",
+    color: "bg-blue-500/15 text-blue-400",
   },
   {
     title: "Avg Trust Score",
@@ -101,7 +101,7 @@ const STAT_CARDS = [
     delta: "+1.5% this month",
     positive: true,
     icon: Shield,
-    color: "bg-green-50 text-green-600",
+    color: "bg-green-500/15 text-green-400",
   },
   {
     title: "Active Users",
@@ -109,7 +109,7 @@ const STAT_CARDS = [
     delta: "-12 vs last week",
     positive: false,
     icon: Users,
-    color: "bg-purple-50 text-purple-600",
+    color: "bg-purple-500/15 text-purple-400",
   },
 ];
 
@@ -122,13 +122,15 @@ function CustomTooltip({ active, payload, label }: {
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="card px-3 py-2 text-xs shadow-lg">
-      <div className="font-semibold text-slate-700 mb-1">{label}</div>
+    <div className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs shadow-xl">
+      <div className="font-semibold text-slate-200 mb-1">{label}</div>
       {payload.map((p) => (
         <div key={p.name} className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: p.color }} />
-          <span className="text-slate-500">{p.name}:</span>
-          <span className="font-bold text-slate-900">{typeof p.value === "number" && p.value % 1 !== 0 ? p.value.toFixed(1) : p.value}</span>
+          <span className="text-slate-400">{p.name}:</span>
+          <span className="font-bold text-white">
+            {typeof p.value === "number" && p.value % 1 !== 0 ? p.value.toFixed(1) : p.value}
+          </span>
         </div>
       ))}
     </div>
@@ -146,24 +148,25 @@ export default function AnalyticsPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h2 className="text-2xl font-black text-slate-900 flex items-center gap-2">
+          <h2 className="text-2xl font-black text-white flex items-center gap-2">
             <BarChart2 className="w-7 h-7 text-rose-500" />
             Analytics Center
           </h2>
-          <p className="text-slate-500 text-sm mt-1">
+          <p className="text-slate-400 text-sm mt-1">
             Platform usage, knowledge base health, and query intelligence
           </p>
         </div>
+
         {/* Date range filter */}
-        <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
+        <div className="flex items-center gap-1 p-1 bg-slate-800 rounded-lg">
           {DATE_RANGES.map((r) => (
             <button
               key={r}
               onClick={() => setRange(r)}
               className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
                 range === r
-                  ? "bg-white text-rose-600 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700"
+                  ? "bg-slate-900 text-rose-400 shadow-sm"
+                  : "text-slate-400 hover:text-slate-200"
               }`}
             >
               {r}
@@ -175,7 +178,7 @@ export default function AnalyticsPage() {
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {STAT_CARDS.map((s) => (
-          <div key={s.title} className="card p-5">
+          <div key={s.title} className="bg-slate-900 border border-slate-800 rounded-xl p-5">
             <div className="flex items-start justify-between mb-3">
               <div className={`w-10 h-10 rounded-xl ${s.color} flex items-center justify-center`}>
                 <s.icon className="w-5 h-5" />
@@ -186,9 +189,9 @@ export default function AnalyticsPage() {
                 <TrendingDown className="w-4 h-4 text-red-400" />
               )}
             </div>
-            <div className="text-2xl font-black text-slate-900 mb-0.5">{s.value}</div>
-            <div className="text-xs text-slate-500 font-medium">{s.title}</div>
-            <div className={`text-xs mt-1 font-medium ${s.positive ? "text-green-600" : "text-red-500"}`}>
+            <div className="text-2xl font-black text-white mb-0.5">{s.value}</div>
+            <div className="text-xs text-slate-400 font-medium">{s.title}</div>
+            <div className={`text-xs mt-1 font-medium ${s.positive ? "text-green-400" : "text-red-400"}`}>
               {s.delta}
             </div>
           </div>
@@ -198,11 +201,11 @@ export default function AnalyticsPage() {
       {/* Charts row 1 */}
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Query volume AreaChart */}
-        <div className="lg:col-span-2 card p-6">
+        <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-6">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h3 className="font-bold text-slate-900">Query Volume</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Queries vs. documents over {range}</p>
+              <h3 className="font-bold text-white">Query Volume</h3>
+              <p className="text-xs text-slate-400 mt-0.5">Queries vs. documents over {range}</p>
             </div>
             <span className="badge badge-rose">Live</span>
           </div>
@@ -218,12 +221,17 @@ export default function AnalyticsPage() {
                   <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid stroke="#f1f5f9" strokeDasharray="4 4" />
-              <XAxis dataKey="label" tick={{ fontSize: 10 }} axisLine={false} tickLine={false}
-                interval={Math.max(Math.floor(queryData.length / 6) - 1, 0)} />
-              <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} width={36} />
+              <CartesianGrid stroke="#1e293b" strokeDasharray="4 4" />
+              <XAxis
+                dataKey="label"
+                tick={{ fontSize: 10, fill: "#94a3b8" }}
+                axisLine={false}
+                tickLine={false}
+                interval={Math.max(Math.floor(queryData.length / 6) - 1, 0)}
+              />
+              <YAxis tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} width={36} />
               <Tooltip content={<CustomTooltip />} />
-              <Legend iconSize={8} wrapperStyle={{ fontSize: 11 }} />
+              <Legend iconSize={8} wrapperStyle={{ fontSize: 11, color: "#94a3b8" }} />
               <Area type="monotone" dataKey="queries" name="Queries" stroke="#e11d48" strokeWidth={2} fill="url(#gQ)" dot={false} />
               <Area type="monotone" dataKey="documents" name="Documents" stroke="#3b82f6" strokeWidth={2} fill="url(#gD)" dot={false} />
             </AreaChart>
@@ -231,16 +239,16 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Trust score LineChart */}
-        <div className="card p-6">
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
           <div className="mb-5">
-            <h3 className="font-bold text-slate-900">Trust Score Trend</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Avg answer confidence monthly</p>
+            <h3 className="font-bold text-white">Trust Score Trend</h3>
+            <p className="text-xs text-slate-400 mt-0.5">Avg answer confidence monthly</p>
           </div>
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={TRUST_TREND} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
-              <CartesianGrid stroke="#f1f5f9" strokeDasharray="4 4" />
-              <XAxis dataKey="month" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} domain={[85, 97]} width={36} />
+              <CartesianGrid stroke="#1e293b" strokeDasharray="4 4" />
+              <XAxis dataKey="month" tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} domain={[85, 97]} width={36} />
               <Tooltip content={<CustomTooltip />} />
               <Line
                 type="monotone" dataKey="score" name="Trust Score"
@@ -249,8 +257,8 @@ export default function AnalyticsPage() {
               />
             </LineChart>
           </ResponsiveContainer>
-          <div className="mt-4 flex items-center justify-between text-xs text-slate-500">
-            <span>Current: <strong className="text-slate-900">94.2%</strong></span>
+          <div className="mt-4 flex items-center justify-between text-xs text-slate-400">
+            <span>Current: <strong className="text-white">94.2%</strong></span>
             <span className="badge badge-green">+6.0 pts YTD</span>
           </div>
         </div>
@@ -259,16 +267,23 @@ export default function AnalyticsPage() {
       {/* Charts row 2 */}
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Repositories BarChart */}
-        <div className="card p-6">
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
           <div className="mb-5">
-            <h3 className="font-bold text-slate-900">Top Repositories</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Document count by source</p>
+            <h3 className="font-bold text-white">Top Repositories</h3>
+            <p className="text-xs text-slate-400 mt-0.5">Document count by source</p>
           </div>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={REPOSITORIES} layout="vertical" margin={{ top: 0, right: 10, bottom: 0, left: 0 }}>
-              <CartesianGrid stroke="#f1f5f9" strokeDasharray="4 4" horizontal={false} />
-              <XAxis type="number" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-              <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} width={130} />
+              <CartesianGrid stroke="#1e293b" strokeDasharray="4 4" horizontal={false} />
+              <XAxis type="number" tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+              <YAxis
+                type="category"
+                dataKey="name"
+                tick={{ fontSize: 10, fill: "#94a3b8" }}
+                axisLine={false}
+                tickLine={false}
+                width={130}
+              />
               <Tooltip content={<CustomTooltip />} />
               <Bar dataKey="docs" name="Documents" radius={[0, 4, 4, 0]}>
                 {REPOSITORIES.map((entry) => (
@@ -280,35 +295,35 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Top topics table */}
-        <div className="card p-6">
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-bold text-slate-900">Top Searched Topics</h3>
-              <p className="text-xs text-slate-500 mt-0.5">By query count with trend</p>
+              <h3 className="font-bold text-white">Top Searched Topics</h3>
+              <p className="text-xs text-slate-400 mt-0.5">By query count with trend</p>
             </div>
             <span className="badge badge-blue">{range}</span>
           </div>
           <div className="overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-100">
-                  <th className="text-left text-xs font-semibold text-slate-400 pb-2 pr-3">#</th>
-                  <th className="text-left text-xs font-semibold text-slate-400 pb-2">Topic</th>
-                  <th className="text-right text-xs font-semibold text-slate-400 pb-2">Queries</th>
-                  <th className="text-right text-xs font-semibold text-slate-400 pb-2">Trend</th>
+                <tr className="border-b border-slate-800">
+                  <th className="text-left text-xs font-semibold text-slate-500 pb-2 pr-3">#</th>
+                  <th className="text-left text-xs font-semibold text-slate-500 pb-2">Topic</th>
+                  <th className="text-right text-xs font-semibold text-slate-500 pb-2">Queries</th>
+                  <th className="text-right text-xs font-semibold text-slate-500 pb-2">Trend</th>
                 </tr>
               </thead>
               <tbody>
                 {TOP_TOPICS.map((t, i) => (
-                  <tr key={t.topic} className="border-b border-slate-50 last:border-0">
-                    <td className="py-2.5 pr-3 text-xs font-bold text-slate-300">{i + 1}</td>
+                  <tr key={t.topic} className="border-b border-slate-800/50 last:border-0">
+                    <td className="py-2.5 pr-3 text-xs font-bold text-slate-500">{i + 1}</td>
                     <td className="py-2.5 pr-2">
-                      <span className="text-xs text-slate-700 font-medium line-clamp-1">{t.topic}</span>
+                      <span className="text-xs text-slate-200 font-medium line-clamp-1">{t.topic}</span>
                     </td>
-                    <td className="py-2.5 text-right text-xs font-bold text-slate-900 pr-2">{t.queries}</td>
+                    <td className="py-2.5 text-right text-xs font-bold text-white pr-2">{t.queries}</td>
                     <td className="py-2.5 text-right">
                       <span className={`inline-flex items-center gap-0.5 text-xs font-semibold
-                        ${t.trend === "up" ? "text-green-600" : "text-red-500"}`}>
+                        ${t.trend === "up" ? "text-green-400" : "text-red-400"}`}>
                         {t.trend === "up"
                           ? <ArrowUpRight className="w-3 h-3" />
                           : <ArrowDownRight className="w-3 h-3" />}
