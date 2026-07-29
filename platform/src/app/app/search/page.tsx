@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import {
   Search, Filter, X, ChevronDown, BookOpen, Plus, ExternalLink,
   FileText, Globe, Database, FileSpreadsheet, Calendar, User, Building2,
   SlidersHorizontal, Loader2, Hash, Sparkles, Quote,
 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -101,10 +102,10 @@ const MOCK_RESULTS: SearchResult[] = [
 ];
 
 const SOURCE_TYPE_META = {
-  pdf: { label: "PDF", icon: FileText, badge: "badge-rose" },
-  web: { label: "Web", icon: Globe, badge: "badge-blue" },
-  dataset: { label: "Dataset", icon: Database, badge: "badge-purple" },
-  spreadsheet: { label: "Spreadsheet", icon: FileSpreadsheet, badge: "badge-green" },
+  pdf: { label: "PDF", icon: FileText, bg: "bg-rose-500/15", color: "text-rose-400", badge: "badge-rose" },
+  web: { label: "Web", icon: Globe, bg: "bg-blue-500/15", color: "text-blue-400", badge: "badge-blue" },
+  dataset: { label: "Dataset", icon: Database, bg: "bg-purple-500/15", color: "text-purple-400", badge: "badge-purple" },
+  spreadsheet: { label: "Spreadsheet", icon: FileSpreadsheet, bg: "bg-green-500/15", color: "text-green-400", badge: "badge-green" },
 };
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -116,25 +117,25 @@ function ConfidenceBar({ value }: { value: number }) {
   const color = pct >= 85 ? "bg-green-500" : pct >= 65 ? "bg-amber-400" : "bg-rose-400";
   return (
     <div className="flex items-center gap-2">
-      <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+      <div className="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
         <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-xs font-semibold text-slate-500 w-9 text-right">{pct}%</span>
+      <span className="text-xs font-semibold text-slate-400 w-9 text-right">{pct}%</span>
     </div>
   );
 }
 
 function HighlightedExcerpt({ text, highlights }: { text: string; highlights: string[] }) {
-  if (!highlights.length) return <p className="text-sm text-slate-600 leading-relaxed">{text}</p>;
+  if (!highlights.length) return <p className="text-sm text-slate-400 leading-relaxed">{text}</p>;
 
   const regex = new RegExp(`(${highlights.map((h) => h.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`, "gi");
   const parts = text.split(regex);
 
   return (
-    <p className="text-sm text-slate-600 leading-relaxed">
+    <p className="text-sm text-slate-400 leading-relaxed">
       {parts.map((part, i) =>
         highlights.some((h) => h.toLowerCase() === part.toLowerCase()) ? (
-          <mark key={i} className="bg-rose-100 text-rose-800 rounded px-0.5 not-italic">{part}</mark>
+          <mark key={i} className="bg-rose-500/20 text-rose-300 rounded px-0.5 not-italic">{part}</mark>
         ) : (
           <span key={i}>{part}</span>
         )
@@ -148,15 +149,15 @@ function ResultCard({ result, onAddToCollection }: { result: SearchResult; onAdd
   const Icon = meta.icon;
 
   return (
-    <div className="card p-5 space-y-3 hover:border-rose-200 transition-colors">
+    <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-3 hover:border-rose-500/40 transition-colors">
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3 flex-1 min-w-0">
-          <div className="w-9 h-9 rounded-lg bg-rose-50 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <Icon className="w-4 h-4 text-rose-600" />
+          <div className={`w-9 h-9 rounded-lg ${meta.bg} flex items-center justify-center flex-shrink-0 mt-0.5`}>
+            <Icon className={`w-4 h-4 ${meta.color}`} />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2">{result.title}</h3>
+            <h3 className="font-semibold text-white text-sm leading-snug line-clamp-2">{result.title}</h3>
             <div className="flex flex-wrap items-center gap-2 mt-1.5">
               <span className={`badge ${meta.badge}`}>{meta.label}</span>
               {result.tags.slice(0, 2).map((tag) => (
@@ -165,17 +166,23 @@ function ResultCard({ result, onAddToCollection }: { result: SearchResult; onAdd
             </div>
           </div>
         </div>
-        <div className="flex-shrink-0 w-28">
-          <div className="text-xs text-slate-400 mb-1 text-right">Confidence</div>
+        <div className="flex-shrink-0 w-28 hidden sm:block">
+          <div className="text-xs text-slate-500 mb-1 text-right">Confidence</div>
           <ConfidenceBar value={result.confidence} />
         </div>
+      </div>
+
+      {/* Confidence bar on mobile */}
+      <div className="sm:hidden">
+        <div className="text-xs text-slate-500 mb-1">Confidence</div>
+        <ConfidenceBar value={result.confidence} />
       </div>
 
       {/* Excerpt */}
       <HighlightedExcerpt text={result.excerpt} highlights={result.highlights} />
 
       {/* Metadata */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
         <span className="flex items-center gap-1">
           <User className="w-3 h-3" />
           {result.author}
@@ -191,9 +198,9 @@ function ResultCard({ result, onAddToCollection }: { result: SearchResult; onAdd
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between pt-1 border-t border-slate-100">
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-800">
         <div className="flex items-center gap-1.5">
-          <span className="text-xs text-slate-400 font-medium">Refs:</span>
+          <span className="text-xs text-slate-500 font-medium">Refs:</span>
           {result.citations.map((c) => (
             <span key={c} className="cite-ref">{c}</span>
           ))}
@@ -201,12 +208,12 @@ function ResultCard({ result, onAddToCollection }: { result: SearchResult; onAdd
         <div className="flex items-center gap-2">
           <button
             onClick={() => onAddToCollection(result)}
-            className="btn-secondary py-1.5 px-3 text-xs"
+            className="inline-flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 py-1.5 px-3 rounded-lg text-xs font-medium transition-colors"
           >
-            <Plus className="w-3 h-3" /> Add to Collection
+            <Plus className="w-3 h-3" /> Collection
           </button>
-          <button className="btn-primary py-1.5 px-3 text-xs">
-            <ExternalLink className="w-3 h-3" /> Open in Studio
+          <button className="inline-flex items-center gap-1.5 bg-rose-600 hover:bg-rose-500 text-white py-1.5 px-3 rounded-lg text-xs font-medium transition-colors">
+            <ExternalLink className="w-3 h-3" /> Open
           </button>
         </div>
       </div>
@@ -220,8 +227,8 @@ function FilterChip({ label, active, onToggle }: { label: string; active: boolea
       onClick={onToggle}
       className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
         active
-          ? "bg-rose-50 border-rose-300 text-rose-700"
-          : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
+          ? "bg-rose-500/15 border-rose-500/40 text-rose-400"
+          : "bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600 hover:text-slate-300"
       }`}
     >
       {label}
@@ -233,7 +240,10 @@ function FilterChip({ label, active, onToggle }: { label: string; active: boolea
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SearchPage() {
-  const [query, setQuery] = useState("");
+  const searchParams = useSearchParams();
+  const initialQ = searchParams?.get("q") ?? "";
+
+  const [query, setQuery] = useState(initialQ);
   const [mode, setMode] = useState<SearchMode>("semantic");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -248,15 +258,16 @@ export default function SearchPage() {
   const toggleFilter = (f: string) =>
     setActiveFilters((prev) => (prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f]));
 
-  const handleSearch = useCallback(async () => {
-    if (!query.trim()) return;
+  const handleSearch = useCallback(async (q?: string) => {
+    const searchQuery = q ?? query;
+    if (!searchQuery.trim()) return;
     setLoading(true);
     setSearched(true);
     try {
       const res = await fetch(`${API_BASE}/api/search`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, mode, filters: { dateRange, fileType, repository, subjectArea } }),
+        body: JSON.stringify({ query: searchQuery, mode, filters: { dateRange, fileType, repository, subjectArea } }),
       });
       if (res.ok) {
         const data = await res.json();
@@ -270,6 +281,12 @@ export default function SearchPage() {
       setLoading(false);
     }
   }, [query, mode, dateRange, fileType, repository, subjectArea]);
+
+  // Auto-search on mount if query param is present
+  useEffect(() => {
+    if (initialQ) handleSearch(initialQ);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") handleSearch();
@@ -288,29 +305,32 @@ export default function SearchPage() {
     { key: "citation", label: "Citation", icon: Quote },
   ];
 
+  const inputClass = "w-full bg-slate-800 border border-slate-700 text-white placeholder:text-slate-500 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-rose-500/60 transition-colors";
+  const selectClass = `${inputClass} appearance-none`;
+
   return (
-    <div className="flex h-full">
+    <div className="flex h-full bg-slate-950">
       {/* Sidebar */}
-      <aside className="hidden lg:flex flex-col w-64 xl:w-72 border-r border-slate-200 bg-slate-50/50 p-4 gap-4 flex-shrink-0">
+      <aside className="hidden lg:flex flex-col w-64 xl:w-72 border-r border-slate-800 bg-slate-900/40 p-4 gap-4 flex-shrink-0">
         <div>
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-2 mb-4">
             <SlidersHorizontal className="w-4 h-4 text-slate-500" />
-            <h3 className="text-sm font-semibold text-slate-700">Advanced Filters</h3>
+            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Filters</h3>
           </div>
 
           {/* Date range */}
-          <div className="space-y-2 mb-4">
-            <label className="section-label">Date Range</label>
-            <input type="date" className="input text-xs" value={dateRange.from}
-              onChange={(e) => setDateRange((p) => ({ ...p, from: e.target.value }))} placeholder="From" />
-            <input type="date" className="input text-xs" value={dateRange.to}
-              onChange={(e) => setDateRange((p) => ({ ...p, to: e.target.value }))} placeholder="To" />
+          <div className="space-y-2 mb-5">
+            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider block">Date Range</label>
+            <input type="date" className={inputClass} value={dateRange.from}
+              onChange={(e) => setDateRange((p) => ({ ...p, from: e.target.value }))} />
+            <input type="date" className={inputClass} value={dateRange.to}
+              onChange={(e) => setDateRange((p) => ({ ...p, to: e.target.value }))} />
           </div>
 
           {/* File type */}
-          <div className="mb-4">
-            <label className="section-label">File Type</label>
-            <select className="input text-xs mt-1" value={fileType} onChange={(e) => setFileType(e.target.value)}>
+          <div className="mb-5">
+            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">File Type</label>
+            <select className={selectClass} value={fileType} onChange={(e) => setFileType(e.target.value)}>
               <option value="all">All types</option>
               <option value="pdf">PDF</option>
               <option value="web">Web pages</option>
@@ -320,9 +340,9 @@ export default function SearchPage() {
           </div>
 
           {/* Repository */}
-          <div className="mb-4">
-            <label className="section-label">Repository</label>
-            <select className="input text-xs mt-1" value={repository} onChange={(e) => setRepository(e.target.value)}>
+          <div className="mb-5">
+            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Repository</label>
+            <select className={selectClass} value={repository} onChange={(e) => setRepository(e.target.value)}>
               <option value="all">All repositories</option>
               <option value="fao">FAO Digital Library</option>
               <option value="cgiar">CGIAR Repository</option>
@@ -333,9 +353,9 @@ export default function SearchPage() {
           </div>
 
           {/* Subject area */}
-          <div className="mb-4">
-            <label className="section-label">Subject Area</label>
-            <select className="input text-xs mt-1" value={subjectArea} onChange={(e) => setSubjectArea(e.target.value)}>
+          <div className="mb-5">
+            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Subject Area</label>
+            <select className={selectClass} value={subjectArea} onChange={(e) => setSubjectArea(e.target.value)}>
               <option value="all">All subjects</option>
               <option value="food-security">Food Security</option>
               <option value="climate">Climate Adaptation</option>
@@ -345,16 +365,19 @@ export default function SearchPage() {
             </select>
           </div>
 
-          <button onClick={handleSearch} className="btn-primary w-full justify-center">
+          <button
+            onClick={() => handleSearch()}
+            className="flex items-center justify-center gap-2 w-full bg-rose-600 hover:bg-rose-500 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors"
+          >
             <Filter className="w-4 h-4" /> Apply Filters
           </button>
         </div>
 
         {searched && results.length > 0 && (
-          <div className="card p-3 mt-auto">
-            <p className="text-xs text-slate-500 font-medium mb-1">Results</p>
-            <p className="text-2xl font-black text-slate-900">{results.length}</p>
-            <p className="text-xs text-slate-400">matching documents</p>
+          <div className="mt-auto bg-slate-800 border border-slate-700 rounded-xl p-4">
+            <p className="text-xs text-slate-500 font-medium mb-1">Results found</p>
+            <p className="text-3xl font-black text-white">{results.length}</p>
+            <p className="text-xs text-slate-500">matching documents</p>
           </div>
         )}
       </aside>
@@ -364,17 +387,17 @@ export default function SearchPage() {
         <div className="p-4 sm:p-6 space-y-4 sm:space-y-5">
           {/* Page header */}
           <div>
-            <h2 className="text-2xl font-black text-slate-900">Search</h2>
-            <p className="text-sm text-slate-500 mt-1">Query your entire knowledge base with semantic, keyword, or citation search.</p>
+            <h2 className="text-xl font-bold text-white">Hybrid Search</h2>
+            <p className="text-sm text-slate-500 mt-0.5">Query the DARE repository with semantic, keyword, or citation search.</p>
           </div>
 
           {/* Search bar */}
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 pointer-events-none" />
             <input
               ref={inputRef}
               type="text"
-              className="input pl-12 pr-12 py-3.5 text-base rounded-xl shadow-sm"
+              className="w-full bg-slate-900 border border-slate-800 hover:border-slate-700 focus:border-rose-500/60 text-white placeholder:text-slate-500 pl-12 pr-24 py-3.5 text-sm rounded-xl focus:outline-none transition-colors"
               placeholder="Search documents, datasets, policies…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -382,14 +405,14 @@ export default function SearchPage() {
             />
             {query && (
               <button onClick={clearSearch}
-                className="absolute right-14 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                className="absolute right-24 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors p-1">
                 <X className="w-4 h-4" />
               </button>
             )}
             <button
-              onClick={handleSearch}
+              onClick={() => handleSearch()}
               disabled={!query.trim() || loading}
-              className="absolute right-3 top-1/2 -translate-y-1/2 btn-primary py-1.5 px-3 text-xs disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-rose-600 hover:bg-rose-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold text-xs px-4 py-2 rounded-lg transition-colors"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Search"}
             </button>
@@ -397,15 +420,15 @@ export default function SearchPage() {
 
           {/* Mode tabs + filter chips */}
           <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3">
-            <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-1">
+            <div className="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-1 gap-1">
               {MODES.map(({ key, label, icon: Icon }) => (
                 <button
                   key={key}
                   onClick={() => setMode(key)}
                   className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
                     mode === key
-                      ? "bg-white text-rose-600 shadow-sm"
-                      : "text-slate-500 hover:text-slate-700"
+                      ? "bg-slate-800 text-rose-400 shadow-sm"
+                      : "text-slate-500 hover:text-slate-300"
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -425,27 +448,27 @@ export default function SearchPage() {
           {loading && (
             <div className="flex flex-col items-center justify-center py-24 gap-4">
               <Loader2 className="w-10 h-10 text-rose-400 animate-spin" />
-              <p className="text-slate-500 font-medium">Searching your knowledge base…</p>
+              <p className="text-slate-400 font-medium">Searching the DARE repository…</p>
             </div>
           )}
 
           {!loading && !searched && (
             <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-rose-50 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
                 <Search className="w-8 h-8 text-rose-400" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-800">Start searching your knowledge base</h3>
-                <p className="text-sm text-slate-400 mt-1 max-w-sm">
-                  Enter a query above to find documents, datasets, and research across all your connected repositories.
+                <h3 className="text-base font-bold text-white">Search the DARE repository</h3>
+                <p className="text-sm text-slate-500 mt-1 max-w-sm">
+                  Enter a query above to find documents, datasets, and research across all connected repositories.
                 </p>
               </div>
-              <div className="flex flex-wrap gap-2 justify-center mt-2">
+              <div className="flex flex-wrap gap-2 justify-center mt-1">
                 {["Food security Zimbabwe", "Climate adaptation Africa", "SADC agricultural policy"].map((s) => (
                   <button
                     key={s}
-                    onClick={() => { setQuery(s); setTimeout(handleSearch, 50); }}
-                    className="badge badge-rose cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => { setQuery(s); handleSearch(s); }}
+                    className="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-full transition-colors"
                   >
                     {s}
                   </button>
@@ -456,28 +479,33 @@ export default function SearchPage() {
 
           {!loading && searched && results.length === 0 && (
             <div className="flex flex-col items-center justify-center py-24 gap-3 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center">
-                <BookOpen className="w-8 h-8 text-slate-400" />
+              <div className="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center">
+                <BookOpen className="w-8 h-8 text-slate-500" />
               </div>
-              <h3 className="text-lg font-bold text-slate-700">No results found</h3>
-              <p className="text-sm text-slate-400">Try adjusting your query or clearing filters.</p>
-              <button onClick={clearSearch} className="btn-secondary mt-2">Clear search</button>
+              <h3 className="text-base font-bold text-white">No results found</h3>
+              <p className="text-sm text-slate-500">Try adjusting your query or clearing filters.</p>
+              <button
+                onClick={clearSearch}
+                className="mt-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              >
+                Clear search
+              </button>
             </div>
           )}
 
           {!loading && results.length > 0 && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <p className="text-sm text-slate-500">
-                  <span className="font-semibold text-slate-800">{results.length}</span> results for{" "}
-                  <span className="font-semibold text-rose-600">&ldquo;{query}&rdquo;</span>
-                  <span className="ml-2 badge badge-purple">{mode}</span>
+                  <span className="font-semibold text-white">{results.length}</span> results for{" "}
+                  <span className="font-semibold text-rose-400">&ldquo;{query}&rdquo;</span>
+                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-500/15 text-purple-400">{mode}</span>
                 </p>
-                <select className="input w-auto text-xs py-1.5 px-3">
-                  <option>Sort: Relevance</option>
-                  <option>Sort: Date (newest)</option>
-                  <option>Sort: Date (oldest)</option>
-                  <option>Sort: Confidence</option>
+                <select className="bg-slate-800 border border-slate-700 text-slate-300 text-xs py-1.5 px-3 rounded-lg focus:outline-none">
+                  <option>Relevance</option>
+                  <option>Date (newest)</option>
+                  <option>Date (oldest)</option>
+                  <option>Confidence</option>
                 </select>
               </div>
               {results.map((r) => (
