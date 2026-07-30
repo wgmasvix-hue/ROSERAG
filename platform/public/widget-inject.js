@@ -19,10 +19,10 @@
   var BG2   = '#1a1028';
 
   var SUGGESTIONS = [
-    'climate-smart agriculture Zimbabwe',
-    'food security Southern Africa',
-    'renewable energy rural communities',
-    'maternal health outcomes Zimbabwe',
+    'engineering design projects Bulawayo',
+    'vocational training outcomes Zimbabwe',
+    'construction management best practices',
+    'electrical engineering renewable energy',
   ];
 
   /* ── STYLES ──────────────────────────────────────────────────── */
@@ -165,7 +165,7 @@
   var btn = el('button', {id:'_cai-btn', title:'Ask ChengetAI'},
     '<svg viewBox="0 0 24 24"><path d="M20 2H4a2 2 0 00-2 2v18l4-4h14a2 2 0 002-2V4a2 2 0 00-2-2zm-2 10H6V10h12v2zm0-3H6V7h12v2z"/></svg>'
   );
-  var badge = el('div', {id:'_cai-badge'}, 'Ask AI about DARE research');
+  var badge = el('div', {id:'_cai-badge'}, 'Ask AI about BPoly research');
   document.body.appendChild(btn);
   document.body.appendChild(badge);
 
@@ -180,7 +180,7 @@
       '<div id="_cai-logo">',
         '<div id="_cai-icon">C</div>',
         '<div><div id="_cai-name">ChengetAI Labs</div>',
-             '<div id="_cai-sub">AI layer · DARE Repository</div></div>',
+             '<div id="_cai-sub">AI layer · BPoly Repository</div></div>',
       '</div>',
       '<div style="display:flex;align-items:center;gap:8px">',
         '<a id="_cai-openlink" href="'+API+'" target="_blank" rel="noopener">Open ↗</a>',
@@ -197,7 +197,7 @@
       '<div id="_cai-err"></div>',
       '<div id="_cai-answer">',
         '<div id="_cai-ans-head">',
-          '<span id="_cai-ans-label">AI Answer · DARE sources</span>',
+          '<span id="_cai-ans-label">AI Answer · BPoly sources</span>',
           '<span id="_cai-trust"></span>',
         '</div>',
         '<div id="_cai-text"></div>',
@@ -205,7 +205,7 @@
       '<div id="_cai-sources"><div id="_cai-src-label">Source documents</div><div id="_cai-src-list"></div></div>',
     '</div>',
     '<div id="_cai-dare">',
-      '🔒 Grounded in <a href="https://dspace.dare.co.zw" target="_blank" rel="noopener">dspace.dare.co.zw</a> · DSpace 8.1',
+      '🔒 Grounded in <a href="https://bulawayopolytecnicrepository.dare.co.zw" target="_blank" rel="noopener">bulawayopolytecnicrepository.dare.co.zw</a> · DSpace 8',
     '</div>',
   ].join('');
   document.body.appendChild(panel);
@@ -268,7 +268,7 @@
     document.getElementById('_cai-text').innerHTML = '';
     document.getElementById('_cai-src-list').innerHTML = '';
     document.getElementById('_cai-send').disabled = true;
-    document.getElementById('_cai-stxt').textContent = 'Searching DARE…';
+    document.getElementById('_cai-stxt').textContent = 'Searching BPoly repo…';
     show('_cai-status');
 
     fetch(API+'/api/ask/stream', {

@@ -18,7 +18,7 @@
 
   var API   = 'https://roserag.dare.co.zw';
   var ID    = '_rr-home';
-  var CHIPS = ['food security Zimbabwe', 'climate change Southern Africa', 'maternal health outcomes', 'renewable energy rural'];
+  var CHIPS = ['engineering design Bulawayo', 'vocational education Zimbabwe', 'construction management', 'electrical engineering projects'];
 
   /* ── Routing helpers ────────────────────────────────────────── */
 
@@ -315,8 +315,8 @@
     /* heading */
     var heading = document.createElement('h2');
     heading.className = '_rr-heading';
-    heading.innerHTML = 'Ask anything about <em>DARE Research</em>';
-    var sub = el('p', { className: '_rr-sub' }, ['Get cited AI answers from the DARE institutional repository — powered by RoseRAG.']);
+    heading.innerHTML = 'Ask anything about <em>Bulawayo Polytechnic</em>';
+    var sub = el('p', { className: '_rr-sub' }, ['Get cited AI answers from the Bulawayo Polytechnic Repository — powered by RoseRAG.']);
 
     /* search */
     var input = el('input', {
@@ -387,7 +387,7 @@
     if (!results || !answerEl) return;
 
     /* reset */
-    answerEl.innerHTML = '<span class="_rr-spinner"></span>Searching DARE repository…';
+    answerEl.innerHTML = '<span class="_rr-spinner"></span>Searching BPoly repository…';
     answerEl.classList.remove('_rr-cursor');
     sourcesEl.innerHTML = '';
     sourcesEl.style.display = 'none';
