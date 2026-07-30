@@ -1,46 +1,60 @@
 #!/usr/bin/env bash
-# ═══════════════════════════════════════════════════════════════
-#  RoseRAG — DSpace Widget Injector
-#  Run this ONCE on your DSpace server to embed the AI widget.
+# ═══════════════════════════════════════════════════════════════════════
+#  RoseRAG — DSpace Integration Installer
 #
-#  What it does:
-#    1. Finds your DSpace nginx config automatically
-#    2. Adds a sub_filter that injects the widget script tag
-#    3. Validates and reloads nginx
+#  Embeds two scripts into your DSpace site via nginx sub_filter:
 #
-#  Usage:
-#    ssh root@dspace.dare.co.zw
+#    1. dspace-home-inject.js  — AI search section on the home page
+#       Adds a full-width "Ask AI" banner above the DSpace search bar.
+#
+#    2. widget-inject.js       — Floating AI assistant on every page
+#       A persistent "Ask AI" button in the bottom-right corner.
+#
+#  One-command install (run on your DSpace server as root):
 #    curl -fsSL https://roserag.dare.co.zw/dspace-inject.sh | bash
 #
-#  Or manually:
+#  Manual install:
 #    bash dspace-inject.sh
-# ═══════════════════════════════════════════════════════════════
+#
+#  Requirements:
+#    • nginx with ngx_http_sub_module (nginx-full on Debian/Ubuntu)
+#    • Root or sudo access
+# ═══════════════════════════════════════════════════════════════════════
 
 set -e
 
-WIDGET_URL="https://roserag.dare.co.zw/widget-inject.js"
-SCRIPT_TAG='<script src="'"$WIDGET_URL"'" defer></script>'
-INJECT_LINE='sub_filter '"'"'</body>'"'"' '"'"''"$SCRIPT_TAG"'</body>'"'"';'
-ONCE_LINE='sub_filter_once on;'
+BASE_URL="https://roserag.dare.co.zw"
+WIDGET_URL="$BASE_URL/widget-inject.js"
+HOME_URL="$BASE_URL/dspace-home-inject.js"
 
-RED='\033[0;31m'; GREEN='\033[0;32m'; CYAN='\033[0;36m'; YELLOW='\033[1;33m'; NC='\033[0m'
+RED='\033[0;31m'; GREEN='\033[0;32m'; CYAN='\033[0;36m'; YELLOW='\033[1;33m'; BOLD='\033[1m'; NC='\033[0m'
 ok()   { echo -e "${GREEN}  ✓ $1${NC}"; }
 info() { echo -e "${CYAN}→ $1${NC}"; }
 warn() { echo -e "${YELLOW}  ⚠ $1${NC}"; }
 fail() { echo -e "${RED}  ✗ $1${NC}"; exit 1; }
 
 echo ""
-echo "═══════════════════════════════════════════════════════"
-echo "  RoseRAG · DSpace Widget Injector"
-echo "  Widget: $WIDGET_URL"
-echo "═══════════════════════════════════════════════════════"
+echo -e "${BOLD}═══════════════════════════════════════════════════════${NC}"
+echo -e "${BOLD}  RoseRAG · DSpace Integration Installer${NC}"
+echo -e "${BOLD}═══════════════════════════════════════════════════════${NC}"
+echo ""
+echo "  This will add:"
+echo "    • Home page AI search section  (dspace-home-inject.js)"
+echo "    • Floating AI widget           (widget-inject.js)"
 echo ""
 
-# ── Check nginx ────────────────────────────────────────────────
-command -v nginx &>/dev/null || fail "nginx not found — is this the DSpace server?"
-ok "nginx $(nginx -v 2>&1 | grep -o '[0-9.]*' | head -1)"
+# ── Require root ───────────────────────────────────────────────────────
+if [ "$(id -u)" -ne 0 ]; then
+  warn "Not running as root. Trying sudo..."
+  exec sudo bash "$0" "$@"
+fi
 
-# ── Check sub_filter module ────────────────────────────────────
+# ── Check nginx ────────────────────────────────────────────────────────
+command -v nginx &>/dev/null || fail "nginx not found — is this the DSpace server?"
+NGINX_VER=$(nginx -v 2>&1 | grep -oP '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+ok "nginx $NGINX_VER"
+
+# ── Check ngx_http_sub_module ──────────────────────────────────────────
 info "Checking ngx_http_sub_module..."
 if nginx -V 2>&1 | grep -q "http_sub_module"; then
   ok "ngx_http_sub_module present"
@@ -49,26 +63,32 @@ else
   echo ""
   echo "  Install nginx with sub_filter support:"
   echo "    apt-get install -y nginx-full"
-  echo ""
   echo "  Then re-run this script."
   exit 1
 fi
 
-# ── Find DSpace nginx config ───────────────────────────────────
+# ── Find DSpace nginx config ───────────────────────────────────────────
 info "Finding DSpace nginx config..."
 
 CONF=""
-# Common locations for DSpace's nginx site config
-for f in \
-  /etc/nginx/sites-enabled/dspace \
-  /etc/nginx/sites-enabled/default \
-  /etc/nginx/conf.d/dspace.conf \
-  /etc/nginx/conf.d/default.conf \
-  $(ls /etc/nginx/sites-enabled/ 2>/dev/null) \
-  $(ls /etc/nginx/conf.d/ 2>/dev/null)
-do
+CANDIDATES=(
+  /etc/nginx/sites-enabled/dspace
+  /etc/nginx/sites-enabled/default
+  /etc/nginx/conf.d/dspace.conf
+  /etc/nginx/conf.d/default.conf
+)
+
+# Also search all enabled sites
+while IFS= read -r f; do
+  CANDIDATES+=("$f")
+done < <(ls /etc/nginx/sites-enabled/ 2>/dev/null | sed 's|^|/etc/nginx/sites-enabled/|' || true)
+while IFS= read -r f; do
+  CANDIDATES+=("$f")
+done < <(ls /etc/nginx/conf.d/ 2>/dev/null | sed 's|^|/etc/nginx/conf.d/|' || true)
+
+for f in "${CANDIDATES[@]}"; do
   [ -f "$f" ] || continue
-  if grep -q "8080\|dspace" "$f" 2>/dev/null; then
+  if grep -qE "8080|dspace" "$f" 2>/dev/null; then
     CONF="$f"
     break
   fi
@@ -78,82 +98,108 @@ if [ -z "$CONF" ]; then
   echo ""
   echo "  Could not auto-detect DSpace nginx config."
   echo "  Available configs:"
-  ls /etc/nginx/sites-enabled/ 2>/dev/null && ls /etc/nginx/conf.d/ 2>/dev/null || true
+  ls /etc/nginx/sites-enabled/ 2>/dev/null || true
+  ls /etc/nginx/conf.d/ 2>/dev/null || true
   echo ""
-  read -rp "  Enter path to your DSpace nginx config: " CONF
+  read -rp "  Path to your DSpace nginx config: " CONF
   [ -f "$CONF" ] || fail "File not found: $CONF"
 fi
 
-ok "Found config: $CONF"
+ok "Config: $CONF"
 
-# ── Already injected? ──────────────────────────────────────────
-if grep -q "roserag.dare.co.zw/widget-inject.js" "$CONF"; then
-  ok "Widget already injected in $CONF — nothing to do."
+# ── Already fully injected? ────────────────────────────────────────────
+HAS_HOME=0
+HAS_WIDGET=0
+grep -q "dspace-home-inject.js" "$CONF" 2>/dev/null && HAS_HOME=1
+grep -q "widget-inject.js"      "$CONF" 2>/dev/null && HAS_WIDGET=1
+
+if [ "$HAS_HOME" -eq 1 ] && [ "$HAS_WIDGET" -eq 1 ]; then
+  ok "Both scripts already injected — nothing to do."
   echo ""
-  echo "  To test: open https://dspace.dare.co.zw in your browser."
-  echo "  You should see a floating 'Ask AI' button at the bottom-right."
+  echo "  Open your DSpace site to verify the AI section appears."
+  echo "  To update the scripts, clear cache: nginx -s reload"
   exit 0
 fi
 
-# ── Backup ────────────────────────────────────────────────────
+# ── Backup ────────────────────────────────────────────────────────────
 BACKUP="${CONF}.bak.$(date +%Y%m%d%H%M%S)"
 cp "$CONF" "$BACKUP"
-ok "Backup saved: $BACKUP"
+ok "Backup: $BACKUP"
 
-# ── Inject sub_filter into every location / block ─────────────
-info "Injecting sub_filter directives..."
+# ── Build the injection block ──────────────────────────────────────────
+#
+#  We inject two <script> tags before </head>:
+#    1. dspace-home-inject.js  — loads first, handles home page section
+#    2. widget-inject.js       — loads second, floating widget everywhere
+#
+HEAD_INJECT="<script src=\"$HOME_URL\" defer><\\/script><script src=\"$WIDGET_URL\" defer><\\/script>"
 
-# Strategy: insert before the closing brace of any proxy_pass location
-# that passes to localhost (DSpace Tomcat/backend)
-python3 - "$CONF" "$INJECT_LINE" "$ONCE_LINE" << 'PYEOF'
+info "Injecting script tags before </head>..."
+
+python3 - "$CONF" "$HEAD_INJECT" << 'PYEOF'
 import sys, re
 
-conf_path = sys.argv[1]
-inject    = sys.argv[2]
-once      = sys.argv[3]
+conf_path   = sys.argv[1]
+inject_tags = sys.argv[2]
 
 with open(conf_path) as f:
     text = f.read()
 
-# Insert after the first proxy_pass line inside any location block
-# (only if sub_filter not already present)
-if 'sub_filter' in text:
-    print("sub_filter already present — skipping", file=sys.stderr)
-    sys.exit(0)
+already_has = 'dspace-home-inject.js' in text or 'widget-inject.js' in text
 
-# Find proxy_pass lines and append sub_filter directives after them
-pattern = r'(proxy_pass\s+[^\n]+;)'
-replacement = r'\1\n        ' + inject + '\n        ' + once
-new_text, n = re.subn(pattern, replacement, text, count=1)
-
-if n == 0:
-    # Fallback: inject before the last closing brace of the first server block
-    new_text = re.sub(r'(\n\})', '\n    ' + inject + '\n    ' + once + r'\1', text, count=1)
+if already_has:
+    # Partial — ensure both are present
+    if 'dspace-home-inject.js' not in text:
+        # Add before existing widget tag
+        text = text.replace('widget-inject.js', 'dspace-home-inject.js" defer></script><script src="https://roserag.dare.co.zw/widget-inject.js')
+    if 'widget-inject.js' not in text:
+        # Fallback: inject before </head>
+        text = re.sub(r'(</head>)', inject_tags + r'\1', text, count=1)
+else:
+    # Fresh injection: add sub_filter block before </head>
+    sub_block = (
+        '\n    sub_filter_once on;'
+        '\n    sub_filter \'</head>\' \'' + inject_tags + '</head>\';'
+    )
+    # Try to insert after proxy_pass line
+    n = 0
+    new_text, n = re.subn(r'(proxy_pass\s+[^\n]+;)', r'\1' + sub_block, text, count=1)
+    if n == 0:
+        # No proxy_pass found — inject at end of first server block
+        new_text, n = re.subn(r'(server\s*\{[^}]*?)(\n\})', r'\1' + sub_block + r'\2', text, count=1, flags=re.DOTALL)
+    if n > 0:
+        text = new_text
 
 with open(conf_path, 'w') as f:
-    f.write(new_text)
+    f.write(text)
 
-print(f"Injected {n} location(s)")
+print("Done.")
 PYEOF
 
-ok "sub_filter injected"
+ok "Injection written"
 
-# ── Validate & reload ──────────────────────────────────────────
+# ── Validate & reload ──────────────────────────────────────────────────
 info "Validating nginx config..."
-nginx -t 2>&1 || { warn "nginx config invalid — restoring backup"; cp "$BACKUP" "$CONF"; fail "Restored from backup. Check $CONF manually."; }
+nginx -t 2>&1 || {
+  warn "nginx config invalid — restoring backup"
+  cp "$BACKUP" "$CONF"
+  fail "Restored from backup. Check $CONF and run manually."
+}
 ok "Config valid"
 
 info "Reloading nginx..."
-systemctl reload nginx
+systemctl reload nginx 2>/dev/null || nginx -s reload
 ok "nginx reloaded"
 
 echo ""
-echo "═══════════════════════════════════════════════════════"
-echo -e "${GREEN}  ✅  Widget injected into DSpace!${NC}"
+echo -e "${BOLD}═══════════════════════════════════════════════════════${NC}"
+echo -e "${GREEN}${BOLD}  ✅  RoseRAG integrated into DSpace!${NC}"
 echo ""
-echo "  Open https://dspace.dare.co.zw in your browser."
-echo "  You should see a floating 🌸 button at the bottom-right."
+echo "  Visit your DSpace home page to see the AI search section."
 echo ""
-echo "  To remove the widget later:"
+echo "  Home page  — AI search banner above the DSpace search bar"
+echo "  All pages  — floating 'Ask AI' button (bottom-right)"
+echo ""
+echo "  Rollback:"
 echo "    cp $BACKUP $CONF && nginx -t && systemctl reload nginx"
-echo "═══════════════════════════════════════════════════════"
+echo -e "${BOLD}═══════════════════════════════════════════════════════${NC}"
