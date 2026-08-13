@@ -26,6 +26,8 @@ set -e
 BASE_URL="https://roserag.dare.co.zw"
 WIDGET_URL="$BASE_URL/widget-inject.js"
 HOME_URL="$BASE_URL/dspace-home-inject.js"
+AI_PAGE_URL="$BASE_URL/ai/index.html"
+AI_DIR="/opt/dare-ai"
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; CYAN='\033[0;36m'; YELLOW='\033[1;33m'; BOLD='\033[1m'; NC='\033[0m'
 ok()   { echo -e "${GREEN}  ✓ $1${NC}"; }
@@ -41,6 +43,7 @@ echo ""
 echo "  This will add:"
 echo "    • Home page AI search section  (dspace-home-inject.js)"
 echo "    • Floating AI widget           (widget-inject.js)"
+echo "    • Full AI chat page            (/ai/  → repo.dare.co.zw/ai/)"
 echo ""
 
 # ── Require root ───────────────────────────────────────────────────────
@@ -178,6 +181,64 @@ PYEOF
 
 ok "Injection written"
 
+# ── Deploy /ai/ chat page ──────────────────────────────────────────────
+info "Deploying AI chat page to $AI_DIR ..."
+
+mkdir -p "$AI_DIR"
+if curl -fsSL "$AI_PAGE_URL" -o "$AI_DIR/index.html"; then
+  ok "AI page downloaded → $AI_DIR/index.html"
+else
+  warn "Could not download AI page — writing minimal redirect instead"
+  cat > "$AI_DIR/index.html" << HTMLEOF
+<!doctype html><html><head><meta charset="utf-8">
+<meta http-equiv="refresh" content="0;url=https://roserag.dare.co.zw/ai/">
+<title>DARE AI Assistant</title></head>
+<body><a href="https://roserag.dare.co.zw/ai/">Open AI Assistant →</a></body></html>
+HTMLEOF
+fi
+
+# Add nginx location /ai/ block to serve the page (if not already there)
+if ! grep -q "location /ai/" "$CONF" 2>/dev/null; then
+  info "Adding nginx location /ai/ block..."
+  python3 - "$CONF" "$AI_DIR" << 'AIEOF'
+import sys, re
+
+conf_path = sys.argv[1]
+ai_dir    = sys.argv[2]
+
+with open(conf_path) as f:
+    text = f.read()
+
+ai_block = (
+    '\n\n    # ── RoseRAG AI chat page ─────────────────────────────────\n'
+    '    location /ai/ {\n'
+    '        alias ' + ai_dir + '/;\n'
+    '        index index.html;\n'
+    '        try_files $uri $uri/ /ai/index.html;\n'
+    '        add_header Cache-Control "no-cache";\n'
+    '    }\n'
+)
+
+# Inject inside the first server {} block, before the closing }
+new_text, n = re.subn(
+    r'(server\s*\{)(.*?)(\n\})',
+    lambda m: m.group(1) + m.group(2) + ai_block + m.group(3),
+    text, count=1, flags=re.DOTALL
+)
+
+if n > 0:
+    with open(conf_path, 'w') as f:
+        f.write(new_text)
+    print("Added /ai/ location block.")
+else:
+    print("Could not find server {} block — add manually:")
+    print("  location /ai/ { alias " + ai_dir + "/; index index.html; }")
+AIEOF
+  ok "nginx /ai/ location added"
+else
+  ok "nginx /ai/ location already present"
+fi
+
 # ── Validate & reload ──────────────────────────────────────────────────
 info "Validating nginx config..."
 nginx -t 2>&1 || {
@@ -195,10 +256,9 @@ echo ""
 echo -e "${BOLD}═══════════════════════════════════════════════════════${NC}"
 echo -e "${GREEN}${BOLD}  ✅  RoseRAG integrated into DSpace!${NC}"
 echo ""
-echo "  Visit your DSpace home page to see the AI search section."
-echo ""
-echo "  Home page  — AI search banner above the DSpace search bar"
-echo "  All pages  — floating 'Ask AI' button (bottom-right)"
+echo "  🏠  Home page  — AI search banner above the DSpace search bar"
+echo "  💬  All pages  — floating 'Ask AI' button (bottom-right)"
+echo "  🤖  AI chat    — https://$(hostname -f 2>/dev/null || echo 'your-domain')/ai/"
 echo ""
 echo "  Rollback:"
 echo "    cp $BACKUP $CONF && nginx -t && systemctl reload nginx"

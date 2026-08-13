@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI Research Assistant — DARE Repository</title>
+<meta name="description" content="Ask research questions, find papers and get cited AI answers from the DARE institutional repository — powered by RoseRAG.">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:       #070b14;
+  --surface:  #0d1525;
+  --surface2: #131e30;
+  --border:   rgba(255,255,255,0.08);
+  --border2:  rgba(255,255,255,0.12);
+  --rose:     #e11d48;
+  --rose2:    #fb7185;
+  --text:     #e2e8f0;
+  --muted:    #94a3b8;
+  --muted2:   rgba(255,255,255,0.3);
+  --gold:     #c8a84b;
+}
+
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  font-size:14px;
+  line-height:1.5;
+}
+
+/* ── Layout ─────────────────────────────────────────────────── */
+.app{display:flex;flex-direction:column;height:100vh}
+
+/* header */
+.hdr{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 20px;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+  position:relative;
+}
+.hdr-logo{
+  width:32px;height:32px;
+  background:var(--rose);
+  border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:900;font-size:13px;color:#fff;
+  flex-shrink:0;
+}
+.hdr-brand{font-size:15px;font-weight:800;letter-spacing:-0.3px;line-height:1.1}
+.hdr-brand span:first-child{color:var(--rose2)}
+.hdr-brand span:last-child{color:#fff}
+.hdr-sep{width:1px;height:24px;background:var(--border2);margin:0 4px}
+.hdr-repo{font-size:12px;color:var(--muted);line-height:1.2}
+.hdr-repo strong{display:block;color:var(--text);font-size:13px}
+.hdr-clear{
+  margin-left:auto;
+  background:none;border:1px solid var(--border2);
+  border-radius:7px;padding:5px 11px;
+  color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;
+  transition:all 0.15s;white-space:nowrap;
+}
+.hdr-clear:hover{background:var(--surface2);color:var(--text)}
+.hdr-status{
+  display:flex;align-items:center;gap:6px;
+  font-size:11px;color:var(--muted);
+  margin-left:8px;
+}
+.hdr-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:#22c55e;
+  animation:pulse-dot 2s ease-in-out infinite;
+  flex-shrink:0;
+}
+.hdr-dot.offline{background:#ef4444;animation:none}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:0.4}}
+
+/* messages area */
+.msgs{
+  flex:1;overflow-y:auto;overflow-x:hidden;
+  padding:24px 0;
+  scroll-behavior:smooth;
+}
+.msgs-inner{
+  max-width:820px;margin:0 auto;
+  padding:0 16px;
+}
+
+/* single message row */
+.msg{display:flex;gap:10px;margin-bottom:20px;align-items:flex-start}
+.msg.user{flex-direction:row-reverse}
+
+.msg-avatar{
+  width:30px;height:30px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;flex-shrink:0;
+  margin-top:2px;
+}
+.msg.bot  .msg-avatar{background:var(--rose);color:#fff}
+.msg.user .msg-avatar{background:var(--surface2);color:var(--muted);border:1px solid var(--border2);font-size:10px}
+
+.msg-body{flex:1;min-width:0}
+.msg.user .msg-body{display:flex;justify-content:flex-end}
+
+.msg-bubble{
+  max-width:680px;
+  padding:12px 16px;
+  border-radius:14px;
+  font-size:14px;line-height:1.7;
+  word-break:break-word;
+}
+.msg.bot  .msg-bubble{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:4px 14px 14px 14px;
+  color:var(--text);
+}
+.msg.user .msg-bubble{
+  background:var(--rose);
+  color:#fff;
+  border-radius:14px 4px 14px 14px;
+}
+
+/* sources inside bot bubble */
+.msg-sources{margin-top:12px;border-top:1px solid var(--border);padding-top:10px}
+.msg-src-lbl{font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:6px}
+.msg-src-item{
+  display:flex;align-items:flex-start;gap:8px;
+  padding:6px 8px;border-radius:7px;
+  margin-bottom:3px;text-decoration:none;
+  transition:background 0.12s;
+}
+a.msg-src-item:hover{background:rgba(255,255,255,0.05)}
+.msg-src-num{
+  flex-shrink:0;width:16px;height:16px;
+  background:var(--rose);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:700;color:#fff;
+  margin-top:1px;
+}
+.msg-src-info{flex:1;min-width:0}
+.msg-src-title{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msg-src-meta{font-size:11px;color:var(--muted);margin-top:1px}
+
+/* typing indicator */
+.typing-dot{display:inline-block;width:6px;height:6px;background:var(--muted);border-radius:50%;margin:0 2px;animation:typing 1.2s ease-in-out infinite}
+.typing-dot:nth-child(1){animation-delay:0s}
+.typing-dot:nth-child(2){animation-delay:0.2s}
+.typing-dot:nth-child(3){animation-delay:0.4s}
+@keyframes typing{0%,60%,100%{transform:translateY(0);opacity:0.4}30%{transform:translateY(-6px);opacity:1}}
+
+/* streaming cursor */
+.cursor::after{content:"▋";color:var(--rose);animation:blink 1s step-end infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* chips */
+.chips{
+  max-width:820px;margin:0 auto;
+  padding:0 16px 12px;
+  display:flex;flex-wrap:wrap;gap:6px;
+}
+.chip{
+  background:rgba(255,255,255,0.05);
+  border:1px solid var(--border2);
+  border-radius:99px;
+  padding:6px 13px;
+  font-size:12px;color:var(--muted);
+  cursor:pointer;transition:all 0.15s;white-space:nowrap;
+}
+.chip:hover{background:rgba(255,255,255,0.1);color:var(--text);border-color:rgba(255,255,255,0.2)}
+
+/* input row */
+.input-row{
+  flex-shrink:0;
+  background:var(--surface);
+  border-top:1px solid var(--border);
+  padding:12px 16px;
+}
+.input-wrap{
+  max-width:820px;margin:0 auto;
+  display:flex;gap:8px;align-items:flex-end;
+}
+.input-box{
+  flex:1;
+  background:var(--surface2);
+  border:1px solid var(--border2);
+  border-radius:12px;
+  padding:11px 14px;
+  font-size:14px;color:var(--text);
+  outline:none;resize:none;
+  min-height:44px;max-height:120px;
+  font-family:inherit;line-height:1.5;
+  transition:border-color 0.15s;
+  overflow-y:auto;
+}
+.input-box::placeholder{color:var(--muted)}
+.input-box:focus{border-color:var(--rose)}
+.send-btn{
+  width:44px;height:44px;border-radius:11px;
+  background:var(--rose);border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:background 0.15s,transform 0.1s;
+  flex-shrink:0;
+}
+.send-btn:hover:not(:disabled){background:#be123c;transform:translateY(-1px)}
+.send-btn:disabled{opacity:0.45;cursor:not-allowed;transform:none}
+.send-btn svg{width:18px;height:18px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* footer bar */
+.footer{
+  flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:6px 16px;
+  background:var(--surface);
+  border-top:1px solid var(--border);
+  font-size:11px;color:var(--muted);
+}
+.footer a{color:var(--gold);text-decoration:none;font-weight:600}
+.footer a:hover{color:#e4c875}
+
+/* prose inside bot bubbles */
+.prose h1,.prose h2{font-size:1.05rem;font-weight:700;color:var(--text);margin:14px 0 6px}
+.prose h3{font-size:0.95rem;font-weight:600;color:var(--text);margin:10px 0 4px}
+.prose p{margin-bottom:10px;color:var(--text)}
+.prose ul,.prose ol{padding-left:20px;margin-bottom:10px;color:var(--text)}
+.prose li{margin-bottom:3px}
+.prose ul{list-style:disc}
+.prose ol{list-style:decimal}
+.prose strong{font-weight:700;color:#fff}
+.prose em{font-style:italic;color:var(--muted)}
+.prose code{background:rgba(255,255,255,0.08);color:var(--rose2);padding:1px 5px;border-radius:4px;font-size:0.85em;font-family:monospace}
+.prose pre{background:#060d1a;padding:12px;border-radius:8px;overflow-x:auto;margin-bottom:10px}
+.prose pre code{background:none;color:#e2e8f0;padding:0}
+.prose blockquote{border-left:3px solid var(--rose);padding-left:12px;color:var(--muted);margin:10px 0;font-style:italic}
+.prose a{color:var(--rose2);text-decoration:underline}
+
+/* empty state */
+.empty{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:16px;
+  min-height:240px;padding:32px 16px;text-align:center;
+}
+.empty-icon{
+  width:56px;height:56px;background:var(--rose);border-radius:16px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;font-weight:900;color:#fff;
+  box-shadow:0 8px 24px rgba(225,29,72,0.25);
+}
+.empty-title{font-size:20px;font-weight:800;color:#fff;letter-spacing:-0.4px}
+.empty-sub{font-size:13px;color:var(--muted);max-width:380px}
+
+/* scrollbar */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
+
+/* mobile */
+@media(max-width:600px){
+  .hdr{padding:10px 14px}
+  .hdr-repo{display:none}
+  .hdr-sep{display:none}
+  .msgs-inner,.chips,.input-wrap{padding-left:12px;padding-right:12px}
+  .msg-bubble{font-size:13px}
+  .footer{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <header class="hdr">
+    <div class="hdr-logo">R</div>
+    <div class="hdr-brand"><span>ROSE</span><span>RAG</span></div>
+    <div class="hdr-sep"></div>
+    <div class="hdr-repo">
+      <strong>DARE Research Assistant</strong>
+      AI-powered · repo.dare.co.zw
+    </div>
+    <div class="hdr-status">
+      <div class="hdr-dot" id="status-dot"></div>
+      <span id="status-txt">Connecting…</span>
+    </div>
+    <button class="hdr-clear" id="btn-clear">Clear chat</button>
+  </header>
+
+  <!-- Messages -->
+  <div class="msgs" id="msgs">
+    <div class="msgs-inner" id="msgs-inner">
+      <!-- Empty state shown before first message -->
+      <div class="empty" id="empty-state">
+        <div class="empty-icon">R</div>
+        <div class="empty-title">Ask the DARE Repository</div>
+        <div class="empty-sub">Get cited AI answers from DARE institutional research. Ask anything — I'll search the full collection and give you grounded responses.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Suggestion chips -->
+  <div class="chips" id="chips"></div>
+
+  <!-- Input -->
+  <div class="input-row">
+    <div class="input-wrap">
+      <textarea class="input-box" id="input" rows="1"
+        placeholder="Ask a research question…" autocomplete="off" autocorrect="off" spellcheck="true"></textarea>
+      <button class="send-btn" id="send-btn" disabled>
+        <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    🔒 Grounded in
+    <a href="https://repo.dare.co.zw" target="_blank" rel="noopener">repo.dare.co.zw</a>
+    &nbsp;·&nbsp; Powered by
+    <a href="https://roserag.dare.co.zw" target="_blank" rel="noopener">RoseRAG</a>
+    &nbsp;·&nbsp; RASA + RAG
+  </div>
+
+</div><!-- .app -->
+
+<script>
+(function(){
+'use strict';
+
+/* ── Config ─────────────────────────────────────────────────── */
+var API   = 'https://roserag.dare.co.zw';
+var RASA  = API + '/rasa/webhooks/rest/webhook';
+var CHIPS = [
+  'What research is available on electrical engineering?',
+  'Find papers on vocational training in Zimbabwe',
+  'Construction management best practices',
+  'Renewable energy projects in Southern Africa',
+  'ICT in technical education',
+];
+
+/* ── State ──────────────────────────────────────────────────── */
+var SESSION_ID = 'dare-' + Math.random().toString(36).slice(2);
+var messages   = [];  // {role, text, sources}
+var busy       = false;
+var rasaAvail  = false;
+
+/* ── DOM refs ───────────────────────────────────────────────── */
+var msgsEl    = document.getElementById('msgs');
+var inner     = document.getElementById('msgs-inner');
+var inputEl   = document.getElementById('input');
+var sendBtn   = document.getElementById('send-btn');
+var chipsEl   = document.getElementById('chips');
+var emptyEl   = document.getElementById('empty-state');
+var dotEl     = document.getElementById('status-dot');
+var statusTxt = document.getElementById('status-txt');
+var clearBtn  = document.getElementById('btn-clear');
+
+/* ── Status indicator ────────────────────────────────────────── */
+function setStatus(ok, txt) {
+  dotEl.className = 'hdr-dot' + (ok ? '' : ' offline');
+  statusTxt.textContent = txt;
+}
+
+/* ── Chips ───────────────────────────────────────────────────── */
+CHIPS.forEach(function(c) {
+  var btn = document.createElement('button');
+  btn.className = 'chip';
+  btn.textContent = c;
+  btn.addEventListener('click', function() { submit(c); });
+  chipsEl.appendChild(btn);
+});
+
+/* ── Textarea auto-resize + enable send ─────────────────────── */
+inputEl.addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+  sendBtn.disabled = !this.value.trim() || busy;
+});
+inputEl.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    if (!busy && this.value.trim()) submit(this.value.trim());
+  }
+});
+sendBtn.addEventListener('click', function() {
+  if (!busy && inputEl.value.trim()) submit(inputEl.value.trim());
+});
+clearBtn.addEventListener('click', clearChat);
+
+/* ── Render helpers ─────────────────────────────────────────── */
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+function markdownToHtml(md) {
+  if (!md) return '';
+  // Bold, italic, inline code
+  var html = md
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  // Paragraphs / line breaks
+  var paras = html.split(/\n\n+/).map(function(p) {
+    // Bullet lists
+    if (/^\s*[-*•]/.test(p)) {
+      var items = p.split('\n').filter(Boolean).map(function(l) {
+        return '<li>' + l.replace(/^\s*[-*•]\s*/, '') + '</li>';
+      });
+      return '<ul>' + items.join('') + '</ul>';
+    }
+    // Numbered lists
+    if (/^\s*\d+\./.test(p)) {
+      var items = p.split('\n').filter(Boolean).map(function(l) {
+        return '<li>' + l.replace(/^\s*\d+\.\s*/, '') + '</li>';
+      });
+      return '<ol>' + items.join('') + '</ol>';
+    }
+    // Headings
+    if (/^#+\s/.test(p)) {
+      return p.replace(/^(#{1,3})\s+(.+)/, function(_, h, t) {
+        var lvl = h.length;
+        return '<h' + lvl + '>' + t + '</h' + lvl + '>';
+      });
+    }
+    return '<p>' + p.replace(/\n/g, '<br>') + '</p>';
+  });
+  return paras.join('');
+}
+
+function sourcesHtml(sources) {
+  if (!sources || !sources.length) return '';
+  var rows = sources.slice(0, 6).map(function(s, i) {
+    var title  = escHtml(s.title  || 'Untitled');
+    var author = escHtml(s.author || '');
+    var year   = escHtml(s.year   || '');
+    var url    = s.url || null;
+    var meta   = [author, year].filter(Boolean).join(' · ');
+    var tag    = url ? 'a' : 'div';
+    var href   = url ? ' href="' + escHtml(url) + '" target="_blank" rel="noopener"' : '';
+    return '<' + tag + ' class="msg-src-item"' + href + '>' +
+      '<div class="msg-src-num">' + (i+1) + '</div>' +
+      '<div class="msg-src-info">' +
+        '<div class="msg-src-title">' + title + '</div>' +
+        (meta ? '<div class="msg-src-meta">' + meta + '</div>' : '') +
+      '</div>' +
+    '</' + tag + '>';
+  }).join('');
+  return '<div class="msg-sources"><div class="msg-src-lbl">Sources</div>' + rows + '</div>';
+}
+
+function appendMsg(role, html, sources) {
+  emptyEl && (emptyEl.style.display = 'none');
+  chipsEl.style.display = 'none';
+
+  var row = document.createElement('div');
+  row.className = 'msg ' + role;
+
+  var avatar = document.createElement('div');
+  avatar.className = 'msg-avatar';
+  avatar.textContent = role === 'bot' ? 'R' : 'You';
+
+  var body = document.createElement('div');
+  body.className = 'msg-body';
+
+  var bubble = document.createElement('div');
+  bubble.className = 'msg-bubble' + (role === 'bot' ? ' prose' : '');
+  bubble.innerHTML = html + (role === 'bot' && sources ? sourcesHtml(sources) : '');
+
+  body.appendChild(bubble);
+  row.appendChild(avatar);
+  row.appendChild(body);
+  inner.appendChild(row);
+  scrollBottom();
+  return bubble;
+}
+
+function scrollBottom() {
+  msgsEl.scrollTop = msgsEl.scrollHeight;
+}
+
+/* ── Thinking bubble ─────────────────────────────────────────── */
+function showThinking() {
+  var row = document.createElement('div');
+  row.className = 'msg bot';
+  row.id = '_thinking';
+
+  var avatar = document.createElement('div');
+  avatar.className = 'msg-avatar';
+  avatar.textContent = 'R';
+
+  var body = document.createElement('div');
+  body.className = 'msg-body';
+
+  var bubble = document.createElement('div');
+  bubble.className = 'msg-bubble prose';
+  bubble.innerHTML =
+    '<span class="typing-dot"></span>' +
+    '<span class="typing-dot"></span>' +
+    '<span class="typing-dot"></span>';
+
+  body.appendChild(bubble);
+  row.appendChild(avatar);
+  row.appendChild(body);
+  inner.appendChild(row);
+  scrollBottom();
+  return {row: row, bubble: bubble};
+}
+function removeThinking() {
+  var el = document.getElementById('_thinking');
+  if (el) el.remove();
+}
+
+/* ── RASA ping ───────────────────────────────────────────────── */
+function pingRasa() {
+  fetch(API + '/rasa/version', {method:'GET', signal: AbortSignal.timeout(3000)})
+    .then(function(r) {
+      if (r.ok) { rasaAvail = true; setStatus(true, 'RASA + RAG online'); }
+      else { setStatus(true, 'RAG online'); }
+    })
+    .catch(function() { setStatus(true, 'RAG online'); });
+
+  // Also ping RAG health
+  fetch(API + '/api/health', {signal: AbortSignal.timeout(4000)})
+    .then(function(r) { if (r.ok) setStatus(true, rasaAvail ? 'RASA + RAG online' : 'RAG online'); })
+    .catch(function() { setStatus(false, 'Backend offline'); });
+}
+
+/* ── RASA REST call ──────────────────────────────────────────── */
+function rasaAsk(text, onDone) {
+  fetch(RASA, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({sender: SESSION_ID, message: text}),
+    signal: AbortSignal.timeout(15000),
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(msgs) {
+    var reply = '';
+    var sources = [];
+    (msgs || []).forEach(function(m) {
+      if (m.text) reply += m.text + '\n';
+    });
+    onDone(reply.trim() || null, sources, null);
+  })
+  .catch(function(err) {
+    onDone(null, [], err);
+  });
+}
+
+/* ── SSE streaming RAG call ──────────────────────────────────── */
+function ragStream(query, bubble, onComplete) {
+  var url = API + '/api/ask/stream?q=' + encodeURIComponent(query);
+  var es = new EventSource(url);
+  var text = '';
+  var sources = [];
+  var started = false;
+
+  es.addEventListener('token', function(e) {
+    if (!started) {
+      bubble.innerHTML = '';
+      bubble.classList.add('cursor');
+      started = true;
+    }
+    text += e.data;
+    bubble.textContent = text;
+    scrollBottom();
+  });
+
+  es.addEventListener('sources', function(e) {
+    try { sources = JSON.parse(e.data); } catch(_){}
+  });
+
+  es.addEventListener('done', function() {
+    es.close();
+    bubble.classList.remove('cursor');
+    bubble.classList.add('prose');
+    bubble.innerHTML = markdownToHtml(text) + sourcesHtml(sources);
+    scrollBottom();
+    onComplete(true);
+  });
+
+  es.addEventListener('error', function() {
+    es.close();
+    if (!text) {
+      bubble.innerHTML = '<span style="color:rgba(255,100,100,0.8)">⚠️ Could not reach the knowledge base. Please try again.</span>';
+    } else {
+      bubble.classList.remove('cursor');
+      bubble.classList.add('prose');
+      bubble.innerHTML = markdownToHtml(text) + sourcesHtml(sources);
+    }
+    onComplete(false);
+  });
+
+  return es;
+}
+
+/* ── Submit a message ────────────────────────────────────────── */
+function submit(text) {
+  if (busy || !text.trim()) return;
+  busy = true;
+  inputEl.value = '';
+  inputEl.style.height = 'auto';
+  sendBtn.disabled = true;
+
+  // Show user message
+  appendMsg('user', escHtml(text));
+
+  var thinking = showThinking();
+
+  function finish() {
+    busy = false;
+    sendBtn.disabled = !inputEl.value.trim();
+    inputEl.focus();
+  }
+
+  if (rasaAvail) {
+    // Try RASA first; fall back to direct RAG if RASA returns empty
+    rasaAsk(text, function(reply, sources, err) {
+      removeThinking();
+      if (!err && reply && reply.length > 20) {
+        // RASA returned a meaningful answer
+        appendMsg('bot', markdownToHtml(reply), sources);
+        finish();
+      } else {
+        // Fall through to SSE streaming
+        var bubble = appendMsg('bot', '');
+        bubble.innerHTML = '';
+        ragStream(text, bubble, function() { finish(); });
+      }
+    });
+  } else {
+    // Direct SSE streaming
+    removeThinking();
+    var bubble = appendMsg('bot', '');
+    bubble.innerHTML = '';
+    ragStream(text, bubble, function() { finish(); });
+  }
+}
+
+/* ── Clear chat ──────────────────────────────────────────────── */
+function clearChat() {
+  inner.innerHTML = '';
+  inner.appendChild(emptyEl);
+  emptyEl.style.display = '';
+  chipsEl.style.display = '';
+  messages = [];
+  SESSION_ID = 'dare-' + Math.random().toString(36).slice(2);
+}
+
+/* ── Boot ────────────────────────────────────────────────────── */
+pingRasa();
+
+// Welcome message after 600ms
+setTimeout(function() {
+  appendMsg('bot', markdownToHtml(
+    "👋 **Welcome to the DARE Research Assistant!**\n\n" +
+    "I can answer questions, find papers, and cite sources directly from the DARE institutional repository — " +
+    "powered by RoseRAG AI.\n\n" +
+    "Try one of the suggestions below, or type your own research question."
+  ));
+  chipsEl.style.display = '';
+}, 600);
+
+inputEl.focus();
+})();
+</script>
+</body>
+</html>
