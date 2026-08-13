@@ -76,6 +76,35 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # ── Rasa DSpace Assistant ────────────────────────────────────────────────────
+  dspace-assistant:
+    build:
+      context: ./dspace-assistant
+      dockerfile: Dockerfile
+    container_name: roserag-dspace-assistant
+    ports:
+      - "5005:5005"  # Rasa server
+      - "5055:5055"  # Action server
+    environment:
+      - ROSERAG_API_URL=http://backend:8000/api
+      - DSPACE_API_URL=${DSPACE_API_URL:-http://host.docker.internal:8080/server/api}
+      - RASA_PORT=5005
+      - RASA_ACTIONS_PORT=5055
+    env_file:
+      - .env
+    depends_on:
+      backend:
+        condition: service_healthy
+    volumes:
+      - ./dspace-assistant/data:/app/data
+      - ./dspace-assistant/models:/app/models
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 volumes:
   qdrant_data:
   redis_data:

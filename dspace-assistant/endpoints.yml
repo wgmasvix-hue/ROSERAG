@@ -1,0 +1,37 @@
+# Rasa Endpoints Configuration
+
+# Connection to the running action server
+action_endpoint:
+  url: "http://localhost:5055/webhooks/actions/run"
+
+# Optional: Use a tracker store to persist conversation state
+tracker_store:
+  type: memory
+  # For production, use a database:
+  # type: sql
+  # dialect: postgresql
+  # url: postgresql://localhost:5432/rasa
+  # db: rasa
+  # username: rasa
+  # password: rasa_password
+
+# Optional: Use a message store to persist messages
+message_store:
+  type: memory
+  # For production:
+  # type: sql
+  # dialect: postgresql
+  # url: postgresql://localhost:5432/rasa
+
+# Optional: Event broker for message streaming
+# event_broker:
+#   type: sql
+#   dialect: postgresql
+#   url: postgresql://localhost:5432/rasa
+
+# Optional: Lock store for distributed setups
+lock_store:
+  type: in_memory
+  # For production with multiple replicas:
+  # type: redis
+  # url: localhost:6379

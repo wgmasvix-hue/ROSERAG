@@ -1,0 +1,59 @@
+# Rasa specific
+models/
+.rasa/
+conversation_tests/
+results/
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Training data
+training_data/
+*.yml.bak
+
+# Logs
+logs/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+*.egg
+.pytest_cache/
+.coverage
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Development
+.DS_Store
+*.swp
+*.swo
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Cache
+.cache/
+*.cache
+
+# Temporary files
+tmp/
+temp/
+*.tmp

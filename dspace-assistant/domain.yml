@@ -1,0 +1,316 @@
+version: "3.1"
+config:
+  store_entities_as_slots: true
+
+session_config:
+  session_expiration_time: 60
+  carry_over_slots_to_new_session: true
+
+intents:
+  - greet
+  - goodbye
+  - affirm
+  - deny
+  - mood_great
+  - mood_unhappy
+  - help
+  - search_documents
+  - browse_collections
+  - submit_document
+  - access_restrictions
+  - metadata_info
+  - download_document
+  - dspace_features
+  - advanced_search
+  - collection_management
+  - workflow_status
+  - export_formats
+  - integration_with_rag
+  - document_version_control
+  - reporting
+  - technical_support
+  - user_profile
+  - api_access
+  - out_of_scope
+  - chitchat/ask_name
+  - chitchat/ask_howdoing
+  - affirm_rag_capability
+  - deny_rag_capability
+  - feedback
+
+entities:
+  - topic
+  - document_type
+  - author
+  - title
+  - filter_type
+  - format
+
+slots:
+  topic:
+    type: text
+  document_type:
+    type: text
+  author:
+    type: text
+  title:
+    type: text
+  filter_type:
+    type: text
+  format:
+    type: text
+  user_search_query:
+    type: text
+  search_results:
+    type: any
+  workflow_status:
+    type: text
+  access_level:
+    type: text
+
+responses:
+  utter_greet:
+    - text: "Hey! Welcome to the DSpace Assistant powered by ROSERAG. How can I help you today?"
+    - text: "Hello! I'm here to help you navigate DSpace and access institutional knowledge. What would you like to do?"
+    - text: "Welcome! I'm your DSpace assistant. What can I help you with?"
+
+  utter_goodbye:
+    - text: "Bye! Feel free to reach out if you have more questions about DSpace."
+    - text: "Goodbye! Good luck with your research!"
+    - text: "See you later! Thanks for using DSpace Assistant."
+
+  utter_happy:
+    - text: "That's great! How can I assist you with DSpace?"
+    - text: "Awesome! Let's make the most of your time here."
+
+  utter_cheer_up:
+    - text: "I'm here to help! Let me assist you with DSpace."
+    - text: "Don't worry, I can help you find what you're looking for."
+
+  utter_help_options:
+    - text: |
+        I can help you with:
+        🔍 **Search Documents** - Find research by topic, author, or title
+        📚 **Browse Collections** - Explore available institutional collections
+        📤 **Submit Documents** - Learn how to upload and share your work
+        🔐 **Access Issues** - Resolve permission and access problems
+        📊 **Advanced Queries** - Use filters and metadata for precise searches
+        🧠 **Semantic Search** - Use AI-powered retrieval to find relevant information
+        📋 **Metadata** - Understand and add document metadata
+
+        What would you like to do?
+
+  utter_dspace_features:
+    - text: |
+        **DSpace Features:**
+        • Full-text document search
+        • Advanced filtering by author, date, subject, and more
+        • Document versioning and revision history
+        • Customizable metadata and Dublin Core standards
+        • Access control and embargo options
+        • Export in multiple formats (PDF, BibTeX, Dublin Core, JSON)
+        • OAI-PMH compliance for interoperability
+        • Statistics and usage analytics
+        • REST API for programmatic access
+
+        What would you like to know more about?
+
+  utter_metadata_explanation:
+    - text: |
+        **Metadata** is structured information about your document that helps others discover and understand it.
+
+        Common metadata fields:
+        • Title - Document name
+        • Author(s) - Creator(s)
+        • Publication Date - When it was published
+        • Description - Abstract or summary
+        • Subject - Keywords or topics
+        • Language - Document language
+        • Type - Document type (article, thesis, dataset, etc.)
+        • Rights - License and usage rights
+
+        Good metadata makes your document findable and reusable. Would you like guidance on adding metadata?
+
+  utter_submit_guidance:
+    - text: |
+        **Submitting to DSpace:**
+        1. Create or use your institutional account
+        2. Click "Submit" in the DSpace interface
+        3. Select your target collection
+        4. Upload your document (PDF, Word, etc.)
+        5. Add detailed metadata
+        6. Review and submit for workflow approval
+        7. Track your submission status
+
+        Would you like step-by-step guidance on any of these steps?
+
+  utter_search_results:
+    - text: |
+        I found some results! I can show you:
+        • Document titles and descriptions
+        • Authors and publication dates
+        • Relevance scores
+        • Direct download links
+
+        For more detailed analysis or semantic understanding of these documents, I can use ROSERAG's AI-powered retrieval to answer specific questions about the content.
+
+  utter_collections_info:
+    - text: |
+        **Collections** organize documents by topic, department, or type.
+
+        Within each collection you'll find:
+        • Sub-collections (optional)
+        • Browse by title, author, date, or subject
+        • Statistics and usage info
+        • Collection-specific policies
+
+        To find a specific collection, I can search for you. What topic or department are you interested in?
+
+  utter_download_guidance:
+    - text: |
+        **How to Download:**
+        1. Find your document using search
+        2. Click on the document to view details
+        3. Click the "Download" button
+        4. Select your preferred format if available
+        5. The file will download to your device
+
+        Note: Some documents may have access restrictions. If you can't download, please check your permissions or contact the collection administrator.
+
+  utter_access_help:
+    - text: |
+        **Access Issues:**
+
+        Common reasons for restricted access:
+        • **Embargo** - Document is under temporary access restriction
+        • **Permissions** - You need special access rights
+        • **Authentication** - You may need to log in
+        • **Licensing** - Document has usage restrictions
+
+        Solutions:
+        • Log in with your institutional account
+        • Request access from the collection administrator
+        • Wait for embargo to lift (date shown on document)
+        • Check the document's license and usage terms
+
+        Would you like help with any of these?
+
+  utter_advanced_search_guidance:
+    - text: |
+        **Advanced Search Tips:**
+        • **By Author**: Find all works by a researcher
+        • **By Date Range**: Discover publications from specific years
+        • **By Subject/Topic**: Filter using keywords or classifications
+        • **By Type**: Narrow to theses, articles, datasets, etc.
+        • **By Language**: Filter by document language
+        • **Boolean Operators**: Use AND, OR, NOT for precise queries
+
+        Example: `(author:"Smith, John") AND (subject:agriculture) AND (year:2020-2023)`
+
+        What would you like to search for?
+
+  utter_workflow_info:
+    - text: |
+        **Submission Workflow Stages:**
+        1. **Initial Submission** - Document uploaded
+        2. **Review** - Checked by collection administrator
+        3. **Approval/Rejection** - Decision made
+        4. **Archive** - Published and accessible
+
+        You'll receive email notifications at each stage. Check your submission status anytime in your profile.
+
+  utter_rag_explanation:
+    - text: |
+        **ROSERAG - Intelligent Knowledge Retrieval:**
+
+        Beyond simple keyword search, ROSERAG can:
+        • **Understand meaning** - Not just keywords
+        • **Reason over content** - Answer complex questions
+        • **Cite sources** - Show exactly where answers come from
+        • **Calculate confidence** - Rate answer reliability
+        • **Trace reasoning** - Explain how it arrived at answers
+
+        For example, instead of just searching "resilience farming", ROSERAG can answer "What strategies improve resilience among smallholder farmers?" and cite specific passages with page numbers.
+
+        Would you like to use AI-powered semantic search on your documents?
+
+  utter_technical_support:
+    - text: |
+        **Having Technical Issues?**
+
+        Common problems and solutions:
+        • **Can't log in** - Reset password or check account status
+        • **Upload failed** - Check file format and size limits
+        • **Search not working** - Try simpler keywords or clear filters
+        • **Download error** - Try a different browser or file format
+        • **Page not loading** - Clear browser cache and try again
+
+        If these don't help, our technical team is here to assist. Please provide:
+        • What you were trying to do
+        • What error you received
+        • When the problem occurred
+
+        How can I help specifically?
+
+  utter_technical_support_escalation:
+    - text: "I'm escalating this to our technical support team. You'll receive an email shortly with next steps."
+
+  utter_reporting_options:
+    - text: |
+        **Available Reports:**
+        • Download statistics - Most popular documents
+        • Access statistics - Traffic and usage trends
+        • Collection metrics - Number of items, submission rates
+        • Author productivity - Contributions by researcher
+        • Custom reports - Tailored analytics
+
+        Which report would interest you?
+
+  utter_api_documentation:
+    - text: |
+        **DSpace REST API:**
+
+        Access DSpace programmatically for:
+        • Search and discovery
+        • Document retrieval
+        • Metadata queries
+        • Statistics
+        • Batch operations
+
+        **Documentation:**
+        - Full API docs at `/rest/docs`
+        - Authentication via API tokens
+        - JSON responses
+        - Rate limiting applies
+
+        **Integration with ROSERAG:**
+        You can also use the ROSERAG API for semantic search and reasoning over ingested documents.
+
+        Would you like example API calls?
+
+  utter_feedback_thank_you:
+    - text: "Thank you for the feedback! It helps us improve the DSpace Assistant."
+    - text: "Your feedback is valuable. We appreciate you taking the time to share!"
+
+  utter_out_of_scope:
+    - text: "I'm specifically designed to help with DSpace and institutional document management. For other topics, please try a general search engine or contact your IT support team."
+
+  utter_chitchat/ask_name:
+    - text: "I'm the DSpace Assistant, powered by ROSERAG. How can I help you with your institutional knowledge?"
+
+  utter_chitchat/ask_howdoing:
+    - text: "I'm here and ready to help! How can I assist you with DSpace today?"
+
+actions:
+  - action_search_dspace
+  - action_list_collections
+  - action_get_submission_requirements
+  - action_check_access
+  - action_validate_download_permission
+  - action_execute_advanced_search
+  - action_rag_search
+  - action_check_workflow_status
+  - action_generate_report
+  - action_log_technical_issue
+  - action_log_feedback
+  - action_default_fallback
