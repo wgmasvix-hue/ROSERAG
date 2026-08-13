@@ -1,0 +1,170 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply transition-colors duration-200;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-50;
+  }
+
+  ::selection {
+    @apply bg-dare-500 text-white;
+  }
+}
+
+@layer components {
+  /* Buttons */
+  .btn-primary {
+    @apply px-4 py-2 bg-dare-600 text-white rounded-lg hover:bg-dare-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 font-medium;
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2 bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 disabled:bg-gray-400 disabled:text-gray-500 disabled:cursor-not-allowed transition-colors duration-200 font-medium dark:bg-gray-700 dark:text-gray-50 dark:hover:bg-gray-600;
+  }
+
+  .btn-ghost {
+    @apply px-4 py-2 text-dare-600 hover:bg-dare-100 rounded-lg disabled:text-gray-400 transition-colors duration-200 font-medium dark:text-dare-400 dark:hover:bg-dare-900;
+  }
+
+  .btn-icon {
+    @apply p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200;
+  }
+
+  /* Cards */
+  .card {
+    @apply bg-white rounded-lg shadow-sm border border-gray-200 dark:bg-gray-900 dark:border-gray-800;
+  }
+
+  .card-hover {
+    @apply card hover:shadow-md transition-shadow duration-200 cursor-pointer;
+  }
+
+  /* Inputs */
+  .input-base {
+    @apply px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-dare-500;
+  }
+
+  /* Text */
+  .heading-1 {
+    @apply text-4xl font-bold text-gray-900 dark:text-white;
+  }
+
+  .heading-2 {
+    @apply text-3xl font-bold text-gray-900 dark:text-white;
+  }
+
+  .heading-3 {
+    @apply text-2xl font-semibold text-gray-900 dark:text-white;
+  }
+
+  .heading-4 {
+    @apply text-xl font-semibold text-gray-900 dark:text-white;
+  }
+
+  .text-muted {
+    @apply text-gray-600 dark:text-gray-400;
+  }
+
+  /* Loading */
+  .skeleton {
+    @apply animate-pulse bg-gray-200 dark:bg-gray-800 rounded;
+  }
+
+  /* Messages */
+  .message-success {
+    @apply p-3 bg-green-100 text-green-800 rounded-lg dark:bg-green-900 dark:text-green-100;
+  }
+
+  .message-error {
+    @apply p-3 bg-red-100 text-red-800 rounded-lg dark:bg-red-900 dark:text-red-100;
+  }
+
+  .message-info {
+    @apply p-3 bg-dare-100 text-dare-800 rounded-lg dark:bg-dare-900 dark:text-dare-100;
+  }
+
+  .message-warning {
+    @apply p-3 bg-yellow-100 text-yellow-800 rounded-lg dark:bg-yellow-900 dark:text-yellow-100;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Dark mode scrollbar */
+@media (prefers-color-scheme: dark) {
+  ::-webkit-scrollbar-thumb {
+    background: #475569;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+  }
+}
+
+/* Print styles */
+@media print {
+  body {
+    @apply bg-white text-black;
+  }
+
+  .no-print {
+    @apply hidden;
+  }
+}
