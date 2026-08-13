@@ -1,0 +1,5 @@
+# RASA Action Server dependencies
+rasa-sdk==3.6.2
+requests==2.31.0
+sseclient-py==1.8.0
+python-dotenv==1.0.0

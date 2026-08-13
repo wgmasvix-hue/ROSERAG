@@ -1,0 +1,173 @@
+version: "3.1"
+
+# ═══════════════════════════════════════════════════════════════════
+#  RoseRAG — RASA Domain
+#  Defines the full conversational universe: intents, entities,
+#  slots, responses, forms, and actions for the research assistant.
+# ═══════════════════════════════════════════════════════════════════
+
+intents:
+  - greet
+  - goodbye
+  - affirm
+  - deny
+  - help
+  - out_of_scope
+  - ask_question         # free-form research question → RAG
+  - search_papers        # find papers by topic/author/year
+  - get_recommendations  # recommend related papers
+  - browse_collection    # browse a repository collection
+  - check_author         # papers by a specific author
+  - check_topic          # papers on a specific topic
+  - filter_by_year       # filter results by year
+  - get_item_details     # details about a specific paper
+  - clear_filters        # reset search filters
+  - show_sources         # show sources for last answer
+
+entities:
+  - topic
+  - author
+  - year
+  - collection
+  - item_title
+
+slots:
+  topic:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: topic
+
+  author:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: author
+
+  year:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: year
+
+  collection:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: collection
+
+  last_query:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+  last_answer:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+  last_sources:
+    type: list
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+  search_results_count:
+    type: float
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+responses:
+  utter_greet:
+    - text: |
+        👋 Hello! I'm the **RoseRAG Research Assistant** for Bulawayo Polytechnic Repository.
+
+        I can help you:
+        - 🔍 Answer research questions with cited sources
+        - 📄 Find papers by topic, author, or year
+        - 📚 Recommend related literature
+        - 🗂️ Browse repository collections
+
+        What would you like to explore today?
+
+  utter_goodbye:
+    - text: "Goodbye! Happy researching. 📚"
+
+  utter_help:
+    - text: |
+        Here's what I can do:
+
+        **Ask a question:**
+        > "What is the impact of climate change on Southern Africa?"
+
+        **Search papers:**
+        > "Find papers about electrical engineering"
+        > "Show me publications from 2023"
+        > "Papers by Dr. Moyo on vocational training"
+
+        **Browse collections:**
+        > "Show me the Engineering collection"
+
+        **Get recommendations:**
+        > "Recommend papers related to construction management"
+
+        **Show sources:**
+        > "Where did that answer come from?"
+
+  utter_ask_topic:
+    - text: "What topic would you like to search for?"
+
+  utter_ask_question_clarify:
+    - text: "Could you rephrase your question? I want to make sure I give you the most relevant answer."
+
+  utter_searching:
+    - text: "🔍 Searching the Bulawayo Polytechnic Repository..."
+
+  utter_no_results:
+    - text: |
+        I couldn't find anything matching that query in the repository.
+
+        Try:
+        - Using broader terms
+        - Checking spelling
+        - Browsing collections directly
+
+  utter_out_of_scope:
+    - text: |
+        I'm specialised for the Bulawayo Polytechnic Repository.
+        I'm best at answering questions about research in our collection.
+
+        Try asking something like: *"What are the latest engineering dissertations?"*
+
+  utter_filter_applied:
+    - text: "Filter applied. Searching with your updated criteria..."
+
+  utter_filters_cleared:
+    - text: "All filters cleared. Ready for a fresh search!"
+
+  utter_default:
+    - text: |
+        I'm not sure I understood that. Try:
+        - Asking a research question
+        - Searching for papers on a topic
+        - Typing **help** for a list of things I can do
+
+actions:
+  - action_rag_answer          # RAG-powered Q&A
+  - action_search_papers        # DSpace full-text search
+  - action_get_recommendations  # Related paper suggestions
+  - action_browse_collection    # List collection items
+  - action_show_sources         # Display sources for last answer
+  - action_clear_filters        # Reset slot filters
+  - action_session_start        # Custom session init
+
+session_config:
+  session_expiration_time: 60   # minutes
+  carry_over_slots_to_new_session: false

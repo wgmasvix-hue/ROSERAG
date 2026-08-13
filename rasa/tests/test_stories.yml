@@ -1,0 +1,73 @@
+version: "3.1"
+
+# ═══════════════════════════════════════════════════════════════════
+#  RoseRAG RASA — End-to-End Test Stories
+#  Run with:  rasa test --stories tests/test_stories.yml
+# ═══════════════════════════════════════════════════════════════════
+
+stories:
+
+- story: test greet and help
+  steps:
+    - user: |
+        hello
+      intent: greet
+    - action: utter_greet
+    - user: |
+        what can you do
+      intent: help
+    - action: utter_help
+
+- story: test research question flow
+  steps:
+    - user: |
+        what are the challenges of electrical engineering in Zimbabwe
+      intent: ask_question
+      entities:
+        - topic: "electrical engineering"
+    - action: action_rag_answer
+
+- story: test paper search
+  steps:
+    - user: |
+        find papers about renewable energy
+      intent: search_papers
+      entities:
+        - topic: "renewable energy"
+    - action: action_search_papers
+
+- story: test year filter
+  steps:
+    - user: |
+        find papers about vocational training
+      intent: search_papers
+      entities:
+        - topic: "vocational training"
+    - action: action_search_papers
+    - user: |
+        only from 2023
+      intent: filter_by_year
+      entities:
+        - year: "2023"
+    - action: action_search_papers
+
+- story: test clear filters
+  steps:
+    - user: |
+        clear filters
+      intent: clear_filters
+    - action: action_clear_filters
+
+- story: test out of scope
+  steps:
+    - user: |
+        what's the weather today
+      intent: out_of_scope
+    - action: utter_out_of_scope
+
+- story: test goodbye
+  steps:
+    - user: |
+        bye
+      intent: goodbye
+    - action: utter_goodbye

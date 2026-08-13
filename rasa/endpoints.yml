@@ -1,0 +1,25 @@
+# ═══════════════════════════════════════════════════════════════════
+#  RoseRAG RASA — Endpoints Configuration
+# ═══════════════════════════════════════════════════════════════════
+
+# Action server (runs actions.py)
+action_endpoint:
+  url: "http://rasa-actions:5055/webhook"
+
+# Tracker store (in-memory is default; swap for Redis in production)
+# tracker_store:
+#   type: redis
+#   url: redis
+#   port: 6379
+#   db: 0
+#   password: null
+#   use_ssl: false
+
+# Event broker (optional — for analytics / monitoring)
+# event_broker:
+#   type: pika
+#   url: rabbitmq
+#   username: user
+#   password: password
+#   queues:
+#     - rasa_core_events

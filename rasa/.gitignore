@@ -1,0 +1,8 @@
+# RASA generated files
+models/
+.rasa/
+__pycache__/
+*.pyc
+results/
+logs/
+graph.html

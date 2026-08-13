@@ -1,0 +1,57 @@
+recipe: default.v1
+
+# ═══════════════════════════════════════════════════════════════════
+#  RoseRAG RASA — NLU + Policy Pipeline Configuration
+# ═══════════════════════════════════════════════════════════════════
+
+language: en
+
+pipeline:
+  # ── Tokenizer ──────────────────────────────────────────────────
+  - name: WhitespaceTokenizer
+
+  # ── Featurizers ────────────────────────────────────────────────
+  - name: RegexFeaturizer
+  - name: LexicalSyntacticFeaturizer
+  - name: CountVectorsFeaturizer
+  - name: CountVectorsFeaturizer
+    analyzer: char_wb
+    min_ngram: 1
+    max_ngram: 4
+
+  # ── Intent Classifier ─────────────────────────────────────────
+  # DIETClassifier: joint entity + intent classification in one model.
+  # Epochs set low for faster iteration; raise to 200+ for production.
+  - name: DIETClassifier
+    epochs: 100
+    constrain_similarities: true
+    entity_recognition: true
+    BILOU_flag: true
+
+  # ── Entity Synonym Mapper ──────────────────────────────────────
+  - name: EntitySynonymMapper
+
+  # ── Fallback Classifier ───────────────────────────────────────
+  # Routes to action_default_fallback when confidence < threshold
+  - name: FallbackClassifier
+    threshold: 0.70
+    ambiguity_threshold: 0.10
+
+policies:
+  # ── Memoization ───────────────────────────────────────────────
+  - name: MemoizationPolicy
+    max_history: 5
+
+  # ── Rule Policy ───────────────────────────────────────────────
+  # Handles rules (single-turn mappings, fallbacks)
+  - name: RulePolicy
+    core_fallback_threshold: 0.40
+    core_fallback_action_name: "action_default_fallback"
+    enable_fallback_prediction: true
+
+  # ── TED Policy ────────────────────────────────────────────────
+  # Learned dialogue management — handles multi-turn conversations
+  - name: TEDPolicy
+    max_history: 8
+    epochs: 100
+    constrain_similarities: true

@@ -71,6 +71,51 @@ services:
       timeout: 10s
       retries: 3
 
+  # ── RASA dialogue server ─────────────────────────────────────────────────
+  rasa:
+    build:
+      context: ./rasa
+      dockerfile: Dockerfile
+    container_name: roserag-rasa
+    ports:
+      - "127.0.0.1:5005:5005"
+    volumes:
+      - rasa_models:/app/models
+    depends_on:
+      - rasa-actions
+      - backend
+    environment:
+      - RASA_TELEMETRY_ENABLED=false
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5005/version"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ── RASA action server ────────────────────────────────────────────────────
+  rasa-actions:
+    build:
+      context: ./rasa
+      dockerfile: Dockerfile.actions
+    container_name: roserag-rasa-actions
+    ports:
+      - "127.0.0.1:5055:5055"
+    environment:
+      - ROSERAG_API_URL=http://backend:8000
+      - DSPACE_URL=https://bulawayopolytecnicrepository.dare.co.zw
+      - ROSERAG_API_TIMEOUT=30
+    depends_on:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5055/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 volumes:
   qdrant_data:
   redis_data:
+  rasa_models:

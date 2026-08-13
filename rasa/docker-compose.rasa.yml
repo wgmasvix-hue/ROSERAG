@@ -1,0 +1,86 @@
+version: "3.9"
+# ═══════════════════════════════════════════════════════════════════
+#  RoseRAG — RASA-only compose file
+#  For when you want to run RASA separately from the main stack.
+#
+#  Usage (after training the model):
+#    docker compose -f rasa/docker-compose.rasa.yml up -d
+#
+#  Training (run once on the host or in a training container):
+#    docker run --rm -v $(pwd)/rasa:/app rasa/rasa:3.6.20-full \
+#      train --out /app/models
+# ═══════════════════════════════════════════════════════════════════
+
+services:
+
+  # ── RASA NLU + Core server ───────────────────────────────────────
+  rasa:
+    image: rasa/rasa:3.6.20-full
+    container_name: roserag-rasa
+    ports:
+      - "5005:5005"
+    volumes:
+      - ./:/app           # mount rasa/ directory contents
+      - rasa_models:/app/models
+    command: >
+      run
+      --enable-api
+      --cors "*"
+      --endpoints endpoints.yml
+      --credentials credentials.yml
+      --debug
+    environment:
+      - RASA_TELEMETRY_ENABLED=false
+    depends_on:
+      - rasa-actions
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5005/version"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s      # RASA needs time to load the model
+
+  # ── RASA action server ───────────────────────────────────────────
+  rasa-actions:
+    build:
+      context: .
+      dockerfile: Dockerfile.actions
+    container_name: roserag-rasa-actions
+    ports:
+      - "5055:5055"
+    environment:
+      - ROSERAG_API_URL=${ROSERAG_API_URL:-http://host.docker.internal:8002}
+      - DSPACE_URL=${DSPACE_URL:-https://bulawayopolytecnicrepository.dare.co.zw}
+      - ROSERAG_API_TIMEOUT=30
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5055/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ── Ollama (correct health check — just check API responds) ──────
+  # NOTE: This is the fix for the rosersg Phase1 Ollama issue.
+  # The key is:  start_period: 60s  +  check only /api/tags (not model availability)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: roserag-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 60s     # ← Give Ollama time to start before first health check
+
+volumes:
+  rasa_models:
+  ollama_data:

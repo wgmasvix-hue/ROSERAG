@@ -1,0 +1,27 @@
+# ═══════════════════════════════════════════════════════════════════
+#  RoseRAG — RASA Action Server Image
+#  Runs the custom actions that call the RoseRAG/DSpace APIs.
+# ═══════════════════════════════════════════════════════════════════
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python deps
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy action code
+COPY actions/ ./actions/
+
+# Non-root user
+RUN useradd -m -u 1001 rasa && chown -R rasa:rasa /app
+USER rasa
+
+EXPOSE 5055
+
+CMD ["python", "-m", "rasa_sdk", "--actions", "actions", "--port", "5055"]

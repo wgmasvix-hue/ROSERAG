@@ -22,6 +22,18 @@ roserag.dare.co.zw {
         }
     }
 
+    # ── RASA — proxy to RASA dialogue server ─────────────────────
+    # REST:      POST /rasa/webhooks/rest/webhook
+    # Socket.IO: /rasa/socket.io (for real-time chat)
+    handle /rasa/* {
+        uri strip_prefix /rasa
+        reverse_proxy localhost:5005 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            flush_interval -1
+        }
+    }
+
     # ── Static frontend (Next.js export + widget.html) ───────────
     handle {
         root * /opt/roserag/platform/out
